@@ -38,3 +38,5 @@ teste.to_csv("teste.csv", index=False)
 df2 = pd.read_csv('infos_camadas.csv')
 df2['dt_hora_consumo'] = pd.to_datetime(df2['dt_hora_consumo'])
 df2.to_csv('infos_camadas_convertido.csv', index=False)
+
+#parte Gabriel
