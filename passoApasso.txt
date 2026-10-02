@@ -27,6 +27,7 @@ print(f"\nEstatisticas descritivas:\n{df.describe()}")
 
 
 2.3 Limpeza Básica
+
 # --- Limpeza basica ---
 # 1. Corrigir separador decimal em infos_materiais
 # As colunas numericas usam virgula: "0,40" em vez de "0.40"
