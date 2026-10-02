@@ -56,3 +56,20 @@ corridas_resposta = set(resposta['cd_corrida'].unique())
 print(f"So em camadas: {len(corridas_camadas - corridas_resposta)}")
 print(f"So em resposta: {len(corridas_resposta - corridas_camadas)}")
 
+# ============================================================
+# SALVAR DE VOLTA NOS CSVs
+# ============================================================
+
+# garante que as colunas de destino aceitam valores numéricos (float) antes do .loc,
+# já que nasceram como string por causa das linhas de insumo (CAL/COQUE)
+materiais['Densidade t/m3'] = materiais['Densidade t/m3'].astype(object)
+materiais['Rendimento Metálico %'] = materiais['Rendimento Metálico %'].astype(object)
+
+# materiais: aplica as correções feitas em 'metais' no dataframe original
+# (assim nenhuma linha se perde, nem as que não caíram em metais/insumos)
+materiais.loc[metais.index, ['Densidade t/m3', 'Rendimento Metálico %']] = \
+    metais[['Densidade t/m3', 'Rendimento Metálico %']]
+
+materiais.to_csv('infos_materiais.csv', index=False)
+camadas.to_csv('infos_camadas.csv', index=False, date_format='%Y-%m-%d %H:%M:%S')
+resposta.to_csv('VariavelResposta.csv', index=False)
