@@ -11,3 +11,4 @@ print(f"camadas: {camadas.shape[0]} linhas x {camadas.shape[1]} colunas")
 print(f"resposta: {resposta.shape[0]} linhas x {resposta.shape[1]} colunas")
 
 print('oi meus amores')
+print('sou legal')
