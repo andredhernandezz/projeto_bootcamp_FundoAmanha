@@ -8,27 +8,40 @@ import itertools
 from matplotlib.patches import Patch
 
 
-# carregando os tres datasets
-materiais = pd.read_csv('infos_materiais.csv', comment='#')
+import os
+
+# ============================================================
+# CONFIGURAÇÕES
+# ============================================================
+MOSTRAR_INSPECAO = True   # info / nulos / describe de cada dataset (item 2.2 do guia)
+OFFSET_HORAS = 0          # ajuste de fuso para turnos e dia da semana. Verificado: o dt_corrida do treino.csv
+                          # é igual ao primeiro dt_hora_consumo da corrida (diferença 0 h); o "+00:00" é só
+                          # rótulo. Confirmar com o orientador se o relógio é local ou UTC e, se for UTC,
+                          # usar OFFSET_HORAS = -3.
+
+# ============================================================
+# 2.0 CARREGAMENTO E LIMPEZA BÁSICA (nenhum arquivo original é sobrescrito)
+# ============================================================
+# materiais é lido como texto: o arquivo original usa vírgula decimal ("0,40") e as linhas de
+# insumo (CAL/COQUE) têm texto na coluna de densidade. Funciona com vírgula ou ponto.
+materiais = pd.read_csv('infos_materiais.csv', comment='#', dtype=str)
 camadas = pd.read_csv('infos_camadas.csv')
 resposta = pd.read_csv('VariavelResposta.csv')
 
 ####    PARTE 2 EDA ####
 
-# limpeza basica
-# 2. Separar materiais metalicos de insumos
-# Algumas linhas sao insumos (CAL, COQUE), nao sucata metalica
-# Identifique-as: quais linhas tem null em Energia e Rendimento?
-metais = materiais[materiais['Energia Elétrica'].notnull() & materiais['Rendimento Metálico %'].notnull()]
-insumos = materiais[materiais['Energia Elétrica'].isnull() & materiais['Rendimento Metálico %'].isnull()]
+C_EN, C_DENS, C_REND = 'Energia Elétrica', 'Densidade t/m3', 'Rendimento Metálico %'
 
+# 1. Corrigir separador decimal em infos_materiais
+for _col in (C_EN, C_DENS, C_REND):
+    materiais[_col] = materiais[_col].str.strip().str.replace(',', '.', regex=False)
 
-# 1. Corrigir separador decimal em info_materiais
-metais['Densidade t/m3'] = pd.to_numeric(
-    metais['Densidade t/m3'].astype(str).str.replace(',', '.'))
-metais['Rendimento Metálico %'] = pd.to_numeric(
-    metais['Rendimento Metálico %'].astype(str).str.replace(',', '.'))
-
+# 2. Separar materiais metalicos de insumos (insumo = sem energia e sem rendimento: CAL, COQUE)
+_eh_insumo = materiais[C_EN].isnull() & materiais[C_REND].isnull()
+for _col in (C_EN, C_DENS, C_REND):
+    pd.to_numeric(materiais.loc[~_eh_insumo, _col], errors='raise')   # falha cedo se sobrar texto
+print(f"infos_materiais: {int((~_eh_insumo).sum())} materiais metálicos e {int(_eh_insumo.sum())} insumos "
+      f"(decimal corrigido em memória)")
 
 # tamanho dataset - linhas e colunas
 print(f"materiais:  {materiais.shape[0]} linhas x {materiais.shape[1]} colunas")
@@ -36,20 +49,24 @@ print(f"camadas:    {camadas.shape[0]} linhas x {camadas.shape[1]} colunas")
 print(f"resposta:   {resposta.shape[0]} linhas x {resposta.shape[1]} colunas")
 print()
 
-# inspecao rapida de cada dataset 
-'''
-for nome, df in [('materiais', materiais), ('camadas', camadas), ('resposta', resposta)]:
-    print(f"\n{'='*50}")    # separador entre datasets
-    print(f"    {nome.upper()}")
-    print(f"{'='*50}")      # separador entre datasets
-    print(df.info())
-    print(f"\nPrimeiras linhas:\n{df.head()}")
-    print(f"\nValores nulos por coluna:\n{df.isnull().sum()}")
-    print(f"\nEstatisticas descritivas:\n{df.describe()}")
-'''
-
 # 3.Converter datas
 camadas['dt_hora_consumo'] = pd.to_datetime(camadas['dt_hora_consumo'])
+
+
+# inspecao rapida de cada dataset (tipos, primeiras linhas, nulos, estatisticas)
+def inspecionar(datasets):
+    for nome, df in datasets:
+        print(f"\n{'=' * 50}")
+        print(f"    {nome.upper()}")
+        print(f"{'=' * 50}")
+        print(df.info())
+        print(f"\nPrimeiras linhas:\n{df.head()}")
+        print(f"\nValores nulos por coluna:\n{df.isnull().sum()}")
+        print(f"\nEstatisticas descritivas:\n{df.describe()}")
+
+
+if MOSTRAR_INSPECAO:
+    inspecionar([('materiais', materiais), ('camadas', camadas), ('resposta', resposta)])
 
 # 4.Verificar duplicatas
 print(f"num duplicatas em camadas: {(camadas.duplicated().sum())}")
@@ -63,42 +80,21 @@ corridas_resposta = set(resposta['cd_corrida'].unique())
 print(f"So em camadas: {len(corridas_camadas - corridas_resposta)}")
 print(f"So em resposta: {len(corridas_resposta - corridas_camadas)}")
 
+# validação dos joins (o script para aqui se a chave não casar)
+assert resposta['cd_corrida'].is_unique, "VariavelResposta tem cd_corrida duplicado"
+assert corridas_camadas == corridas_resposta, "as corridas de infos_camadas e VariavelResposta não coincidem"
+print(f"Join camadas x resposta validado: {len(corridas_resposta)} corridas nos dois, chave única na resposta")
+
 # ============================================================
-# SALVAR DE VOLTA NOS CSVs
+# SALVAR (arquivo NOVO; os originais ficam intactos)
 # ============================================================
+materiais.to_csv('infos_materiais_limpo.csv', index=False)
 
-# garante que as colunas de destino aceitam valores numéricos (float) antes do .loc,
-# já que nasceram como string por causa das linhas de insumo (CAL/COQUE)
-materiais['Densidade t/m3'] = materiais['Densidade t/m3'].astype(object)
-materiais['Rendimento Metálico %'] = materiais['Rendimento Metálico %'].astype(object)
-
-# materiais: aplica as correções feitas em 'metais' no dataframe original
-# (assim nenhuma linha se perde, nem as que não caíram em metais/insumos)
-materiais.loc[metais.index, ['Densidade t/m3', 'Rendimento Metálico %']] = \
-    metais[['Densidade t/m3', 'Rendimento Metálico %']]
-
-materiais.to_csv('infos_materiais.csv', index=False)
-camadas.to_csv('infos_camadas.csv', index=False, date_format='%Y-%m-%d %H:%M:%S')
-resposta.to_csv('VariavelResposta.csv', index=False)
-
-
-
-# inspecao rapida de cada dataset 
-'''
-for nome, df in [('materiais', materiais), ('camadas', camadas), ('resposta', resposta)]:
-    print(f"\n{'='*50}")    # separador entre datasets
-    print(f"    {nome.upper()}")
-    print(f"{'='*50}")      # separador entre datasets
-    print(df.info())
-    print(f"\nPrimeiras linhas:\n{df.head()}")
-    print(f"\nValores nulos por coluna:\n{df.isnull().sum()}")
-    print(f"\nEstatisticas descritivas:\n{df.describe()}")
-'''
 # ============================================================
 # 3.0 CARREGAMENTO (robusto: pode rodar quantas vezes quiser)
 # ============================================================
 # dtype=str em 'Metálico' porque há códigos numéricos (7071955, 118441...)
-raw = pd.read_csv('infos_materiais.csv', dtype={'Metálico': str})
+raw = pd.read_csv('infos_materiais_limpo.csv', dtype={'Metálico': str})
  
 col_en, col_dens, col_rend = 'Energia Elétrica', 'Densidade t/m3', 'Rendimento Metálico %'
  
@@ -188,6 +184,8 @@ mapa = {**{m: 'leve' for m in leves},
         **{m: 'misto' for m in mistos}}
  
 # Materiais que NÃO estão nas listas do guia: decidir com o orientador.
+# Nota: nenhum deles aparece em infos_camadas (checado na etapa 4.0), então a decisão não
+# afeta volume, classes nem features; basta registrar isso no relatório.
 # Exemplo de como atribuir depois de decidir:
 # mapa.update({'PACH': 'leve', 'GUSD': 'pesado', '103089': 'pesado'})
 metais['classe'] = metais['material'].map(mapa).fillna('sem_classe')
@@ -303,6 +301,17 @@ camadas['peso_t'] = camadas['qt_peso_carregamento'] / 1000      # kg -> tonelada
 
 # classe de cada material (listas do guia, etapa 3)
 mapa_classe = materiais.set_index('material')['classe'].to_dict()
+# classe oficial por material (dicionario_tipo_material.csv): completa quem o guia não lista (RECG, RECC)
+tipo_dic = pd.read_csv('dicionario_tipo_material.csv', dtype=str)
+mapa_tipo = dict(zip(tipo_dic['cd_codigo_material'], tipo_dic['tp_material'].str.strip().str.lower()))
+conflitos = {m: (mapa_classe[m], mapa_tipo[m]) for m in mapa_tipo
+             if mapa_classe.get(m, 'sem_classe') != 'sem_classe' and mapa_classe[m] != mapa_tipo[m]}
+print("Conflitos entre as listas do guia e o dicionario_tipo_material:", conflitos or "nenhum")
+so_dicionario = sorted(m for m in mapa_tipo if mapa_classe.get(m, 'sem_classe') == 'sem_classe')
+for m in so_dicionario:
+    mapa_classe[m] = mapa_tipo[m]
+print("Materiais classificados só pelo dicionario_tipo_material:", so_dicionario,
+      "(sem densidade em infos_materiais: ficam fora do volume e entram em peso_sem_densidade_t)")
 camadas['classe'] = camadas['cd_codigo_material'].map(mapa_classe).fillna('fora_dicionario')
 
 # cobertura: dicionário x camadas
@@ -337,6 +346,24 @@ print(f"Corridas com carregamento 3: {c3['cd_corrida'].nunique()} | "
       f"com GUSL: {c3.loc[c3['cd_codigo_material'] == 'GUSL', 'cd_corrida'].nunique()}")
 print("Peso do carregamento 3 por corrida (t):")
 print((c3.groupby('cd_corrida')['peso_t'].sum()).describe().round(1))
+
+# o guia diz que o carregamento 3 é gusa líquido (GUSL): verificar se é sempre
+c3_mat = (c3.groupby('cd_codigo_material')
+            .agg(linhas=('peso_t', 'size'), corridas=('cd_corrida', 'nunique'), peso_t=('peso_t', 'sum'))
+            .sort_values('peso_t', ascending=False))
+print("\nCarregamento 3 por material:")
+print(c3_mat.round(1).to_string())
+n_corridas_total = camadas['cd_corrida'].nunique()
+n_com_c3 = c3['cd_corrida'].nunique()
+gusl_peso = c3_mat['peso_t'].get('GUSL', 0.0)
+outros_peso = c3_mat['peso_t'].sum() - gusl_peso
+gusl_multi = int((c3[c3['cd_codigo_material'] == 'GUSL'].groupby('cd_corrida').size() > 1).sum())
+print(f"CONCLUSÃO: o carregamento 3 NÃO é só GUSL: tem {len(c3_mat)} materiais distintos; GUSL = "
+      f"{gusl_peso / c3_mat['peso_t'].sum():.1%} do peso. Os outros {len(c3_mat) - 1} materiais somam "
+      f"{outros_peso:.1f} t em {int((c3['cd_codigo_material'] != 'GUSL').sum())} linhas (resíduo; "
+      f"confirmar a origem com o orientador).")
+print(f"Corridas SEM carregamento 3: {n_corridas_total - n_com_c3} de {n_corridas_total} "
+      f"({1 - n_com_c3 / n_corridas_total:.1%}) | corridas com mais de uma linha de GUSL: {gusl_multi}")
 
 # a partir daqui: só os cestões sólidos (carregamentos 1 e 2)
 solidos = camadas[camadas['nu_carregamento'].isin([1, 2])].copy()
@@ -625,7 +652,7 @@ print("\nSalvos: cestoes_resumo.csv, composicao_por_material.csv")
 
 # Custo de cada minuto de parada (R$/min). Definir com o orientador; enquanto for None,
 # o script mostra só os minutos perdidos.
-CUSTO_POR_MINUTO = None
+CUSTO_POR_MINUTO = float(os.environ['CUSTO_POR_MINUTO']) if os.environ.get('CUSTO_POR_MINUTO') else None
 
 COR_SEM, COR_COM = 'steelblue', 'tomato'
 CORES_CARREG = {1: '#000000', 2: '#f63f01'}      # mesmas cores da etapa 4
@@ -832,7 +859,7 @@ camadas['nu_camada'] = camadas['nu_camada'].astype(int)
 camadas['peso_t'] = camadas['qt_peso_carregamento'] / 1000                    # kg -> t
 
 props = materiais.set_index('material')
-camadas['classe'] = camadas['cd_codigo_material'].map(props['classe']).fillna('fora_dicionario')
+camadas['classe'] = camadas['cd_codigo_material'].map(mapa_classe).fillna('fora_dicionario')
 camadas['densidade'] = camadas['cd_codigo_material'].map(props['densidade'])
 camadas['volume_m3'] = camadas['peso_t'] / camadas['densidade']               # volume = peso / densidade
 
@@ -920,8 +947,14 @@ r_long = pd.concat([
                   'carga_alta': resposta['is_carga_alta_carregamento_2'],
                   'parada_s': resposta['qt_segundos_duracao_parada_carregamento_2']}),
 ])
+n_antes_merge = len(cestoes)
 cestoes = cestoes.merge(r_long, on=CHAVE, how='left')
 cestoes = cestoes.merge(resposta[['cd_corrida', 'is_carga_alta']], on='cd_corrida', how='left')
+assert len(cestoes) == n_antes_merge, "o merge com a resposta duplicou ou perdeu cestões"
+assert not cestoes.duplicated(CHAVE).any(), "há cestões duplicados (corrida + carregamento)"
+assert cestoes['carga_alta'].notnull().all() and cestoes['is_carga_alta'].notnull().all(), \
+    "há cestões sem variável resposta"
+print(f"Merge camadas x resposta validado: {len(cestoes)} cestões, todos com resposta, chave única")
 cestoes[FEATURES_BIN] = cestoes[FEATURES_BIN].astype(int)
 
 print(f"Cestões: {len(cestoes)} ({(cestoes['nu_carregamento'] == 1).sum()} no carregamento 1, "
@@ -1095,6 +1128,25 @@ plt.show()
 # ============================================================
 titulo("7.1 FEATURES TEMPORAIS (horário do início da montagem do cestão)")
 
+# 12 cestões não têm horário próprio (todas as corridas têm pelo menos um): herdam o primeiro horário
+# da corrida (o guia manda usar o primeiro carregamento como referência temporal da corrida)
+inicio_corrida = camadas.groupby('cd_corrida')['dt_hora_consumo'].min().rename('inicio_corrida')
+cestoes = cestoes.merge(inicio_corrida, on='cd_corrida', how='left')
+cestoes['fonte_horario'] = np.where(cestoes['inicio_cestao'].notnull(), 'cestao', 'corrida')
+cestoes['inicio_cestao'] = cestoes['inicio_cestao'].fillna(cestoes['inicio_corrida'])
+if OFFSET_HORAS:
+    cestoes['inicio_cestao'] = cestoes['inicio_cestao'] + pd.Timedelta(hours=OFFSET_HORAS)
+print(f"Cestões que herdaram o horário da corrida: {int((cestoes['fonte_horario'] == 'corrida').sum())}")
+
+# checagem cruzada com o treino.csv: dt_corrida deve coincidir com o primeiro consumo da corrida
+if os.path.exists('treino.csv'):
+    _tr = pd.read_csv('treino.csv', usecols=['cd_corrida', 'dt_corrida'])
+    _tr['dt_corrida'] = pd.to_datetime(_tr['dt_corrida'], utc=True).dt.tz_localize(None)
+    _chk = _tr.merge(inicio_corrida.reset_index(), on='cd_corrida')
+    _dif = (_chk['dt_corrida'] - _chk['inicio_corrida']).abs().dt.total_seconds() / 3600
+    print(f"treino.csv: dt_corrida x primeiro consumo em {len(_chk)} corridas | diferença máxima = "
+          f"{_dif.max():.2f} h (0 = mesmo relógio, sem deslocamento de fuso)")
+
 t = cestoes['inicio_cestao']
 cestoes['hora'] = t.dt.hour
 cestoes['dia_semana'] = t.dt.dayofweek                       # 0 = segunda ... 6 = domingo
@@ -1109,7 +1161,7 @@ cestoes['turno'] = np.select([(cestoes['hora'] >= 6) & (cestoes['hora'] < 14),
 cestoes.loc[t.isnull(), 'turno'] = np.nan                    # sem horário: fica fora das análises temporais
 cestoes['dias_desde_inicio'] = (t - t.min()).dt.total_seconds() / 86400
 
-print(f"Cestões sem nenhum horário registrado: {int(t.isnull().sum())} (ficam de fora desta seção)")
+print(f"Cestões sem nenhum horário (nem herdado da corrida): {int(t.isnull().sum())} (ficam de fora desta seção)")
 print(f"Período: {t.min():%d/%m/%Y} a {t.max():%d/%m/%Y} | cestões por turno:")
 print(cestoes['turno'].value_counts().sort_index().to_string())
 print("Turnos (confirmar com o orientador): A = 06h-14h | B = 14h-22h | C = 22h-06h")
@@ -1310,6 +1362,31 @@ plt.show()
 # ============================================================
 # SALVAR (arquivos novos; os de entrada não são tocados)
 # ============================================================
+# dicionário de colunas: papel de cada coluna na modelagem (evita vazamento de dados)
+COLS_TEMPORAIS = {'inicio_cestao', 'inicio_corrida', 'fonte_horario', 'hora', 'dia_semana', 'dia_nome',
+                  'tipo_dia', 'mes', 'turno', 'dias_desde_inicio'}
+
+
+def papel_coluna(col):
+    if col in ('cd_corrida', 'nu_carregamento'):
+        return 'id', ''
+    if col.startswith('is_carga_alta') or col == 'carga_alta':
+        return 'alvo', 'is_carga_alta é da corrida (inclui o outro cestão): vazamento se o modelo for por cestão'
+    if col == 'parada_s' or col.startswith('qt_segundos'):
+        return 'pos_evento', 'só se conhece depois da carga alta: NÃO usar como feature'
+    if col in ('tem_gusa_liquido', 'peso_carreg3_t'):
+        return 'pos_cestao', 'o gusa entra depois dos cestões: só usar se a decisão for conhecida antes do despejo'
+    if col in COLS_TEMPORAIS:
+        return 'temporal', 'conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal'
+    return 'feature', ''
+
+
+_papeis = [{'arquivo': arq, 'coluna': c, 'papel': papel_coluna(c)[0], 'observacao': papel_coluna(c)[1]}
+           for arq, df in (('dataset_modelagem.csv', cestoes), ('dataset_modelagem_corrida.csv', corrida))
+           for c in df.columns]
+pd.DataFrame(_papeis).to_csv('dicionario_colunas_modelagem.csv', index=False)
+print("\nPapel das colunas (dataset_modelagem.csv):")
+print(pd.Series([papel_coluna(c)[0] for c in cestoes.columns]).value_counts().to_string())
 cestoes.to_csv('dataset_modelagem.csv', index=False)
 corrida.to_csv('dataset_modelagem_corrida.csv', index=False)
 pd.concat([comparacao[c].assign(carregamento=c) for c in CARREGAMENTOS]).to_csv(
@@ -1318,3 +1395,65 @@ pb.to_csv('tabela_pontobisserial.csv', index=False)
 print(f"\nSalvos: dataset_modelagem.csv ({cestoes.shape[0]} x {cestoes.shape[1]}), "
       f"dataset_modelagem_corrida.csv ({corrida.shape[0]} x {corrida.shape[1]}), "
       "tabela_comparacao_features.csv, tabela_pontobisserial.csv")
+
+
+"""
+============================================================
+TOP 5 INSIGHTS DA EDA (1799 corridas, 3501 cestões; números da última execução)
+============================================================
+
+1. O evento é frequente e custa tempo.
+   Carga alta em 30,1% das corridas (541 de 1799); por cestão: carregamento 1 = 14,3% e carregamento 2 = 17,7%
+   (nas 1702 corridas com os dois cestões: 12,5% x 17,7%, McNemar p < 0,0001). Só 1,4% das corridas têm nos
+   dois, e ter tido no 1 reduz a chance no 2 (10,4% x 18,7%, p = 0,0039).
+   Impacto: 36,8 h de parada no período (~190 min/mês, ~47 eventos/mês). Mediana 3,0 min, média 4,1 min,
+   máxima 20,7 min; os 10% de eventos mais longos respondem por 30% do tempo parado.
+   Evitar 25% dos eventos pouparia ~47 min/mês (valor em R$ depende do CUSTO_POR_MINUTO).
+
+2. O volume estimado NÃO separa carga alta neste dado (contradiz o "insight-chave" do guia).
+   Volume médio com carga alta x normal: +0,8% no carregamento 1 e -2,0% no 2; AUC 0,526 e 0,488 (0,5 = não
+   separa); sobreposição das distribuições de 83% e 86%. Um modelo de 1 regra (volume >= limiar) acerta 27% e
+   36% nos cestões de teste, contra 84% e 82% de quem sempre prevê "normal". O peso total separa mais (AUC
+   0,36 e 0,40), mas no sentido oposto ao esperado: cestões com carga alta são mais LEVES em peso.
+   Hipóteses a investigar: densidades do dicionário são nominais (a compactação real muda o volume); 28,8 t
+   de RECG/RECC ficam fora do volume por falta de densidade; o volume útil do forno pode depender de outras
+   variáveis (nível de metal residual no carregamento 2).
+
+3. O que separa é a composição: menos material pesado e densidade aparente menor.
+   Significativas mesmo após Bonferroni (p < 0,0028). Carregamento 2: proporção de pesado -42% (AUC 0,29),
+   peso pesado -55%, densidade aparente -12,6%, menos camadas (-14%). Carregamento 1: proporção de pesado
+   -16% (AUC 0,37), densidade aparente -5,7%, proporção de leve +14,6%. É coerente com a física (menos
+   massa densa na base e no meio, mais espaço ocupado por leves), embora o volume nominal não capture isso.
+
+4. Fatores operacionais pesam: fim de semana tem menos carga alta; turno e tendência não.
+   Fim de semana x dia útil: 9,9% x 16,5% no carregamento 1 (p = 0,0002) e 13,6% x 19,8% no 2 (p = 0,0021).
+   Dia da semana: p = 0,0045 e 0,0051. Turno: p = 0,74 (carregamento 1) e 0,097 (carregamento 2, turno C
+   com 20,2%). Tendência no tempo: r = +0,040 (p = 0,089) e -0,033 (p = 0,168), sem melhora nem piora clara.
+   Pode refletir produção/equipe/composição diferente no fim de semana; testar se a diferença some ao controlar
+   por proporção de pesado.
+
+5. A regra "leve - pesado - leve" explica pouco, e tem_gusa_liquido é um confusor.
+   Regra violada (base e topo leves): carregamento 1 = 20,8% x 13,8% (p = 0,041, não sobrevive a correção
+   múltipla); carregamento 2 = sem efeito (p = 0,30). topo_leve praticamente não varia no carregamento 1 (99,5%).
+   tem_gusa_liquido aparece como a 1ª correlação do carregamento 1 (rho = +0,18): 97% das corridas com carga
+   alta têm gusa líquido, contra 75-77% das normais. Mas o gusa entra DEPOIS dos cestões (não causa o evento) e
+   as 363 corridas sem gusa líquido usam bem mais pesado sólido (proporção 0,43/0,51 x 0,28/0,19) e quase não têm
+   carga alta (1,9% e 2,5%). Ou seja, é um proxy da composição do cestão: não usar como feature sem saber se a
+   decisão de adicionar gusa é tomada antes do despejo.
+
+LIMITAÇÕES E DECISÕES REGISTRADAS
+ - Desbalanceamento moderado (30% positivos): split estratificado e métricas além da acurácia (PR-AUC, F1).
+ - Carregamento 3 NÃO é só GUSL: 11 materiais, GUSL = 99,7% do peso (outros 10 = 167,8 t em 45 linhas);
+   363 corridas (20,2%) não têm carregamento 3. Confirmar a origem com o orientador.
+ - Materiais sem classe no guia (PACH, GUSD, FORJ, EXTR, 103089) não aparecem em nenhuma camada: sem impacto.
+ - RECG e RECC (10 linhas, 28,8 t) foram classificados como pesado pelo dicionario_tipo_material.csv e ficam
+   fora do volume por falta de densidade em infos_materiais.
+ - 12 cestões sem horário próprio herdam o primeiro horário da corrida. O dt_corrida do treino.csv coincide
+   com o primeiro consumo (diferença 0 h), então os turnos usam o mesmo relógio; confirmar com o orientador
+   se é local ou UTC (OFFSET_HORAS no topo do script).
+ - Turnos (06-14, 14-22, 22-06h) e CUSTO_POR_MINUTO precisam de confirmação do orientador.
+ - Colunas pós-evento ou pós-cestão (parada_s, is_carga_alta, tem_gusa_liquido, peso_carreg3_t) estão marcadas
+   em dicionario_colunas_modelagem.csv: não usar como feature sem validar o momento em que são conhecidas.
+ - A EDA usa as 1799 corridas da VariavelResposta (inclui as 180 de 04/07 a 04/08/2026 que não estão no
+   treino.csv). Se elas forem o conjunto de teste, refazer limiares e seleção só com as 1619 do treino.
+"""
