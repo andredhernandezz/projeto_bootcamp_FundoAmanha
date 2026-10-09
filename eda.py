@@ -2,13 +2,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from matplotlib.ticker import NullFormatter
 from matplotlib.ticker import ScalarFormatter
 from scipy.stats import binomtest, chi2_contingency, spearmanr, mannwhitneyu, pointbiserialr
 import itertools
 from matplotlib.patches import Patch
-
-
 import os
+
 
 # ============================================================
 # CONFIGURAÇÕES
@@ -24,6 +24,7 @@ OFFSET_HORAS = 0          # ajuste de fuso para turnos e dia da semana. Verifica
 # ============================================================
 # materiais é lido como texto: o arquivo original usa vírgula decimal ("0,40") e as linhas de
 # insumo (CAL/COQUE) têm texto na coluna de densidade. Funciona com vírgula ou ponto.
+
 materiais = pd.read_csv('infos_materiais.csv', comment='#', dtype=str)
 camadas = pd.read_csv('infos_camadas.csv')
 resposta = pd.read_csv('VariavelResposta.csv')
@@ -33,25 +34,30 @@ resposta = pd.read_csv('VariavelResposta.csv')
 C_EN, C_DENS, C_REND = 'Energia Elétrica', 'Densidade t/m3', 'Rendimento Metálico %'
 
 # 1. Corrigir separador decimal em infos_materiais
-for _col in (C_EN, C_DENS, C_REND):
-    materiais[_col] = materiais[_col].str.strip().str.replace(',', '.', regex=False)
+for col in (C_EN, C_DENS, C_REND):
+    materiais[col] = materiais[col].str.strip().str.replace(',', '.', regex=False)
+
 
 # 2. Separar materiais metalicos de insumos (insumo = sem energia e sem rendimento: CAL, COQUE)
 _eh_insumo = materiais[C_EN].isnull() & materiais[C_REND].isnull()
-for _col in (C_EN, C_DENS, C_REND):
-    pd.to_numeric(materiais.loc[~_eh_insumo, _col], errors='raise')   # falha cedo se sobrar texto
+
+
+# Conversão de str para tipo numérico em materiais metálicos (~insumos)
+for col in (C_EN, C_DENS, C_REND):
+    pd.to_numeric(materiais.loc[~_eh_insumo, col], errors='raise')   # falha cedo se sobrar texto
+
+# Quantidade de materiais metálicos e insumos
 print(f"infos_materiais: {int((~_eh_insumo).sum())} materiais metálicos e {int(_eh_insumo.sum())} insumos "
       f"(decimal corrigido em memória)")
 
 # tamanho dataset - linhas e colunas
-print(f"materiais:  {materiais.shape[0]} linhas x {materiais.shape[1]} colunas")
+print(f"\nmateriais:  {materiais.shape[0]} linhas x {materiais.shape[1]} colunas")
 print(f"camadas:    {camadas.shape[0]} linhas x {camadas.shape[1]} colunas")
 print(f"resposta:   {resposta.shape[0]} linhas x {resposta.shape[1]} colunas")
 print()
 
 # 3.Converter datas
 camadas['dt_hora_consumo'] = pd.to_datetime(camadas['dt_hora_consumo'])
-
 
 # inspecao rapida de cada dataset (tipos, primeiras linhas, nulos, estatisticas)
 def inspecionar(datasets):
@@ -68,7 +74,7 @@ def inspecionar(datasets):
 if MOSTRAR_INSPECAO:
     inspecionar([('materiais', materiais), ('camadas', camadas), ('resposta', resposta)])
 
-# 4.Verificar duplicatas
+# 4.Verificar duplicatas em camadas e em resposta['cd_corrida']
 print(f"num duplicatas em camadas: {(camadas.duplicated().sum())}")
 print(f"num duplicatas em resposta: {resposta.duplicated(subset='cd_corrida').sum()}")
 
@@ -96,51 +102,64 @@ materiais.to_csv('infos_materiais_limpo.csv', index=False)
 # dtype=str em 'Metálico' porque há códigos numéricos (7071955, 118441...)
 raw = pd.read_csv('infos_materiais_limpo.csv', dtype={'Metálico': str})
  
-col_en, col_dens, col_rend = 'Energia Elétrica', 'Densidade t/m3', 'Rendimento Metálico %'
+#col_en, col_dens, col_rend = 'Energia Elétrica', 'Densidade t/m3', 'Rendimento Metálico %'
  
 # insumos = linhas sem energia e sem rendimento (CAL, COQUE)
-eh_insumo = raw[col_en].isnull() & raw[col_rend].isnull()
+eh_insumo = raw[C_EN].isnull() & raw[C_REND].isnull()
  
 # nas linhas de insumo, o nome (CAL/COQUE) está na coluna de densidade
-insumos = (raw.loc[eh_insumo, ['Metálico', col_dens]]
-              .rename(columns={'Metálico': 'material', col_dens: 'insumo'}))
- 
+insumos = (raw.loc[eh_insumo, ['Metálico', C_DENS]]
+              .rename(columns={'Metálico': 'material', C_DENS: 'insumo'}))
+
+# criando novo dataframe só para metais
 metais = raw.loc[~eh_insumo].copy()
-metais[col_dens] = pd.to_numeric(metais[col_dens])
+
+# Conversão de str para tipo numérico em materiais metálicos (~insumos)
+metais[C_DENS] = pd.to_numeric(metais[C_DENS])
+
+# Renomeando colunas do dataframe 'metais'
 metais = metais.rename(columns={
     'Metálico': 'material',
-    col_en: 'energia',        # kWh/t
-    col_dens: 'densidade',    # t/m3
-    col_rend: 'rendimento',   # fração (0-1)
+    C_EN: 'energia',        # kWh/t
+    C_DENS: 'densidade',    # t/m3
+    C_REND: 'rendimento',   # fração (0-1)
 }).reset_index(drop=True)
 
-# ============================================================
-# 3.1 VISÃO GERAL
-# ============================================================
+
+####    PARTE 3 EDA - Análise do Dicionário de Materiais  ####
+
+# 3.1 - Visão Gernal dos Materiais
+# Quantos materiais metálicos e insumos existem
 print(f"Materiais metálicos: {len(metais)} | Insumos: {len(insumos)}")
+
+# Tabela insumos
 print("\nInsumos:")
 print(insumos.to_string(index=False))
- 
+
+# Tabela metais ordenada por densidade
 print("\nTabela de materiais metálicos (ordenada por densidade):")
 print(metais.sort_values('densidade').to_string(index=False))
- 
+
  
 def extremo(col, func):
     valor = getattr(metais[col], func)()
     nomes = metais.loc[metais[col] == valor, 'material'].tolist()
     return valor, nomes
- 
- 
+
+
 for col, rotulo in [('densidade', 'densidade'), ('energia', 'energia elétrica'),
                     ('rendimento', 'rendimento')]:
     vmin, nmin = extremo(col, 'min')
     vmax, nmax = extremo(col, 'max')
     print(f"\n{rotulo}: MENOR = {vmin} {nmin} | MAIOR = {vmax} {nmax}")
- 
+
+# Correlação entre densidade, energia e rendimento
 # Spearman (ranking) porque a densidade tem outliers (GUSL/103089 = 7.4)
+# Correlação de Spearman varia entre [-1, +1]
 print("\nCorrelação de Spearman entre propriedades:")
 print(metais[['densidade', 'energia', 'rendimento']].corr(method='spearman').round(2))
-# p-valores das correlações de Spearman
+# p-valor = probabilidade de se obter um resutado igual [0, 1]
+# rho = coeficiente de correlação de Spearman
 print("\nSpearman com p-valor:")
 for a, b in [('densidade', 'energia'),
              ('densidade', 'rendimento'),
@@ -148,9 +167,11 @@ for a, b in [('densidade', 'energia'),
     rho, p = spearmanr(metais[a], metais[b])
     print(f"{a:10s} x {b:10s} rho={rho:+.3f}  p={p:.4f}")
 
- # ============================================================
-# 3.2 SCATTER: densidade x energia, cor = rendimento
 # ============================================================
+# 3.2 - Relaçõe entre Propiedades
+# ============================================================
+
+# SCATTER: densidade x energia, cor = rendimento
 # materiais com propriedades idênticas ficam no mesmo ponto -> junta os rótulos
 pontos = (metais.groupby(['densidade', 'energia', 'rendimento'])['material']
                 .apply(lambda s: '/'.join(s)).reset_index())
@@ -162,19 +183,27 @@ for _, r in pontos.iterrows():
     ax.annotate(r['material'], (r['densidade'], r['energia']),
                 fontsize=8, xytext=(4, 4), textcoords='offset points')
 ax.set_xscale('log')  # densidade vai de 0.3 a 7.4
-ax.set_xticks([0.3, 0.5, 1, 2, 3, 7])
-ax.xaxis.set_major_formatter(ScalarFormatter())
+
+# retirar notação científica do eixo x
+ticks = ([0.3, 0.5, 1, 2, 3, 7])
+ax.set_xticks(ticks)
+
+ax.set_xticklabels([str(t) for t in ticks])
+ax.xaxis.set_minor_formatter(NullFormatter())
+
 plt.colorbar(sc, label='Rendimento metálico')
 ax.set_xlabel('Densidade (t/m³) - escala log')
 ax.set_ylabel('Energia elétrica (kWh/t)')
 ax.set_title('Propriedades dos materiais metálicos')
 plt.tight_layout()
 plt.savefig('fig_3_2_scatter_materiais.png', dpi=150)
-# plt.show() # PLT SHOW ESTA COMENTADO APENAS PARA NAO APARECER -----------------------------------------------------------------------------------
+#plt.show() # PLT SHOW ESTA COMENTADO APENAS PARA NAO APARECER -----------------------------------------------------------------------------------
  
 # ============================================================
-# 3.3 CLASSIFICAÇÃO POR CLASSE DE PESO (listas do guia)
+# 3.3 - Classificando os Materiais
 # ============================================================
+#CLASSIFICAÇÃO POR CLASSE DE PESO (listas do guia)
+
 leves = ['SHRE', 'ESPS', 'CAVA', 'RETL', 'PACB', 'ESBS', 'MARP', 'MISS']
 pesados = ['GUSS', 'GUSL', 'RECA', 'SUGU', 'FOFO', '194032', '118441']
 mistos = ['OXIC', 'MISM', 'PAEP', 'MISB', 'CAFO', 'ESPR', 'PAEB']
@@ -385,7 +414,7 @@ ax.legend(title='Carregamento')
 estilo(ax)
 plt.tight_layout()
 plt.savefig('fig_4_1_camadas_por_cestao.png', dpi=150)
-plt.show()
+#plt.show()
 
 # ============================================================
 # 4.2 DISTRIBUIÇÃO DE PESO POR CARREGAMENTO
@@ -439,7 +468,7 @@ axes[1].legend(loc='upper center', ncol=2)
 estilo(axes[1])
 plt.tight_layout()
 plt.savefig('fig_4_2_peso_por_carregamento.png', dpi=150)
-plt.show()
+#plt.show()
 
 # ============================================================
 # 4.3 COMPOSIÇÃO POR MATERIAL
@@ -481,7 +510,7 @@ axes[1].legend(handles=[Patch(color=CORES_CLASSE[c], label=c) for c in classes_p
                title='Classe', loc='lower right')
 plt.tight_layout()
 plt.savefig('fig_4_3_composicao_material.png', dpi=150)
-plt.show()
+#plt.show()
 
 # carregamento 1 x carregamento 2 (participação percentual no peso)
 comp = solidos.pivot_table(index='cd_codigo_material', columns='nu_carregamento',
@@ -508,7 +537,7 @@ ax.legend()
 estilo(ax, grade='x')
 plt.tight_layout()
 plt.savefig('fig_4_3b_carreg1_vs_2.png', dpi=150)
-plt.show()
+#plt.show()
 
 # materiais que (quase) nunca aparecem juntos no mesmo cestão
 presenca = (solidos.assign(v=1)
@@ -581,7 +610,7 @@ axes[1].legend(title='Zona', ncol=3, loc='upper center', bbox_to_anchor=(0.5, -0
 estilo(axes[1], grade='x')
 plt.tight_layout()
 plt.savefig('fig_4_4_posicao_camadas.png', dpi=150)
-plt.show()
+#plt.show()
 
 # --- regra leve-pesado-leve por cestão ---------------------------------
 base_leve = (solidos[solidos['nu_camada'] == 1]
@@ -715,7 +744,7 @@ ax.set_ylim(0, cont.max() * 1.12)
 estilo(ax)
 plt.tight_layout()
 plt.savefig('fig_5_1_distribuicao_evento.png', dpi=150)
-plt.show()
+#plt.show()
 
 # ============================================================
 # 5.2 CARGA ALTA POR CARREGAMENTO
@@ -776,7 +805,7 @@ axes[1].set_title('Em qual carregamento ocorreu a carga alta')
 estilo(axes[1])
 plt.tight_layout()
 plt.savefig('fig_5_2_carga_alta_por_carregamento.png', dpi=150)
-plt.show()
+#plt.show()
 
 # ============================================================
 # 5.3 DURAÇÃO DAS PARADAS
@@ -842,7 +871,7 @@ axes[1].set_title('Duração por carregamento')
 estilo(axes[1])
 plt.tight_layout()
 plt.savefig('fig_5_3_duracao_paradas.png', dpi=150)
-plt.show()
+#plt.show()
 
 
 # ============================================================
@@ -1034,7 +1063,7 @@ for i, c in enumerate(CARREGAMENTOS):
         estilo(ax)
 plt.tight_layout()
 plt.savefig('fig_6_2_boxplots_features.png', dpi=150)
-plt.show()
+#plt.show()
 
 # ============================================================
 # 6.3 VOLUME ESTIMADO DO CESTÃO
@@ -1101,7 +1130,7 @@ for ax, c in zip(axes, CARREGAMENTOS):
     estilo(ax)
 plt.tight_layout()
 plt.savefig('fig_6_3_volume_por_classe.png', dpi=150)
-plt.show()
+#plt.show()
 
 # taxa de carga alta por faixa de volume (decis): existe um limiar?
 fig, ax = plt.subplots(figsize=(9, 5))
@@ -1121,7 +1150,7 @@ ax.legend()
 estilo(ax)
 plt.tight_layout()
 plt.savefig('fig_6_3b_taxa_por_faixa_volume.png', dpi=150)
-plt.show()
+#plt.show()
 
 # ============================================================
 # 7.1 EXTRAINDO INFORMAÇÕES TEMPORAIS
@@ -1258,7 +1287,7 @@ ax.legend()
 estilo(ax)
 plt.tight_layout()
 plt.savefig('fig_7_2_padroes_temporais.png', dpi=150)
-plt.show()
+#plt.show()
 
 # ============================================================
 # 8.1 MAPA DE CORRELAÇÕES
@@ -1285,7 +1314,7 @@ for c in CARREGAMENTOS:
     plt.title(f'Mapa de correlações - carregamento {c}')
     plt.tight_layout()
     plt.savefig(f'fig_8_1_correlacoes_carreg{c}.png', dpi=150)
-    plt.show()
+    #plt.show()
 
 # ============================================================
 # 8.2 DISTRIBUIÇÕES POR CLASSE
@@ -1310,7 +1339,7 @@ for c in CARREGAMENTOS:
     fig.suptitle(f'Distribuição por classe - carregamento {c}', y=1.0)
     plt.tight_layout()
     plt.savefig(f'fig_8_2_distribuicoes_carreg{c}.png', dpi=150)
-    plt.show()
+    #plt.show()
 
 # ============================================================
 # 8.3 ANÁLISE BIVARIADA COM A RESPOSTA
@@ -1357,7 +1386,7 @@ for i, c in enumerate(CARREGAMENTOS):
         estilo(ax)
 plt.tight_layout()
 plt.savefig('fig_8_3_violinos_top_features.png', dpi=150)
-plt.show()
+#plt.show()
 
 # ============================================================
 # SALVAR (arquivos novos; os de entrada não são tocados)

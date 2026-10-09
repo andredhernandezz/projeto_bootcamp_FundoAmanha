@@ -1,0 +1,57 @@
+arquivo,coluna,papel,observacao
+dataset_modelagem.csv,cd_corrida,id,
+dataset_modelagem.csv,nu_carregamento,id,
+dataset_modelagem.csv,peso_total_t,feature,
+dataset_modelagem.csv,num_camadas,feature,
+dataset_modelagem.csv,num_materiais,feature,
+dataset_modelagem.csv,camadas_peso_zero,feature,
+dataset_modelagem.csv,volume_estimado_m3,feature,
+dataset_modelagem.csv,inicio_cestao,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem.csv,peso_leve_t,feature,
+dataset_modelagem.csv,peso_misto_t,feature,
+dataset_modelagem.csv,peso_pesado_t,feature,
+dataset_modelagem.csv,peso_sem_densidade_t,feature,
+dataset_modelagem.csv,prop_leve,feature,
+dataset_modelagem.csv,prop_misto,feature,
+dataset_modelagem.csv,prop_pesado,feature,
+dataset_modelagem.csv,densidade_aparente,feature,
+dataset_modelagem.csv,base_leve,feature,
+dataset_modelagem.csv,topo_leve,feature,
+dataset_modelagem.csv,leve_no_meio_pct,feature,
+dataset_modelagem.csv,pesado_fora_meio_pct,feature,
+dataset_modelagem.csv,regra_ok,feature,
+dataset_modelagem.csv,peso_carreg3_t,pos_cestao,o gusa entra depois dos cestões: só usar se a decisão for conhecida antes do despejo
+dataset_modelagem.csv,tem_gusa_liquido,pos_cestao,o gusa entra depois dos cestões: só usar se a decisão for conhecida antes do despejo
+dataset_modelagem.csv,carga_alta,alvo,is_carga_alta é da corrida (inclui o outro cestão): vazamento se o modelo for por cestão
+dataset_modelagem.csv,parada_s,pos_evento,só se conhece depois da carga alta: NÃO usar como feature
+dataset_modelagem.csv,is_carga_alta,alvo,is_carga_alta é da corrida (inclui o outro cestão): vazamento se o modelo for por cestão
+dataset_modelagem.csv,inicio_corrida,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem.csv,fonte_horario,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem.csv,hora,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem.csv,dia_semana,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem.csv,dia_nome,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem.csv,tipo_dia,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem.csv,mes,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem.csv,turno,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem.csv,dias_desde_inicio,temporal,conhecido antes do despejo; mes/dias_desde_inicio exigem validação temporal
+dataset_modelagem_corrida.csv,cd_corrida,id,
+dataset_modelagem_corrida.csv,peso_total_t_c1,feature,
+dataset_modelagem_corrida.csv,peso_total_t_c2,feature,
+dataset_modelagem_corrida.csv,volume_estimado_m3_c1,feature,
+dataset_modelagem_corrida.csv,volume_estimado_m3_c2,feature,
+dataset_modelagem_corrida.csv,num_camadas_c1,feature,
+dataset_modelagem_corrida.csv,num_camadas_c2,feature,
+dataset_modelagem_corrida.csv,prop_leve_c1,feature,
+dataset_modelagem_corrida.csv,prop_leve_c2,feature,
+dataset_modelagem_corrida.csv,densidade_aparente_c1,feature,
+dataset_modelagem_corrida.csv,densidade_aparente_c2,feature,
+dataset_modelagem_corrida.csv,is_carga_alta_carregamento_1,alvo,is_carga_alta é da corrida (inclui o outro cestão): vazamento se o modelo for por cestão
+dataset_modelagem_corrida.csv,is_carga_alta_carregamento_2,alvo,is_carga_alta é da corrida (inclui o outro cestão): vazamento se o modelo for por cestão
+dataset_modelagem_corrida.csv,qt_segundos_duracao_parada_carregamento_1,pos_evento,só se conhece depois da carga alta: NÃO usar como feature
+dataset_modelagem_corrida.csv,qt_segundos_duracao_parada_carregamento_2,pos_evento,só se conhece depois da carga alta: NÃO usar como feature
+dataset_modelagem_corrida.csv,is_carga_alta,alvo,is_carga_alta é da corrida (inclui o outro cestão): vazamento se o modelo for por cestão
+dataset_modelagem_corrida.csv,qt_segundos_parada_carga_alta,pos_evento,só se conhece depois da carga alta: NÃO usar como feature
+dataset_modelagem_corrida.csv,peso_carreg3_t,pos_cestao,o gusa entra depois dos cestões: só usar se a decisão for conhecida antes do despejo
+dataset_modelagem_corrida.csv,tem_gusa_liquido,pos_cestao,o gusa entra depois dos cestões: só usar se a decisão for conhecida antes do despejo
+dataset_modelagem_corrida.csv,volume_total_m3,feature,
+dataset_modelagem_corrida.csv,peso_total_solidos_t,feature,
