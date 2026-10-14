@@ -1,0 +1,76 @@
+{
+ "treinado_com_holdout": true,
+ "cestoes": {
+  "1": {
+   "features": [
+    "peso_total_t",
+    "num_camadas",
+    "num_materiais",
+    "camadas_peso_zero",
+    "volume_estimado_m3",
+    "peso_leve_t",
+    "peso_misto_t",
+    "peso_pesado_t",
+    "prop_leve",
+    "prop_misto",
+    "prop_pesado",
+    "densidade_aparente",
+    "base_leve",
+    "topo_leve",
+    "leve_no_meio_pct",
+    "pesado_fora_meio_pct",
+    "regra_ok",
+    "hora",
+    "dia_semana",
+    "h_prev_alta",
+    "h_taxa10",
+    "h_taxa50",
+    "h_desde_ult_alta"
+   ],
+   "platt_coef": 0.4412025251012963,
+   "platt_intercepto": -1.161275540930746,
+   "cortes_prob_bruta": {
+    "0.05": 0.775218812990207,
+    "0.1": 0.6528192269115661,
+    "0.2": 0.46052953040171174
+   },
+   "n_treino": 1799
+  },
+  "2": {
+   "features": [
+    "peso_total_t",
+    "num_camadas",
+    "num_materiais",
+    "camadas_peso_zero",
+    "volume_estimado_m3",
+    "peso_leve_t",
+    "peso_misto_t",
+    "peso_pesado_t",
+    "prop_leve",
+    "prop_misto",
+    "prop_pesado",
+    "densidade_aparente",
+    "base_leve",
+    "topo_leve",
+    "leve_no_meio_pct",
+    "pesado_fora_meio_pct",
+    "regra_ok",
+    "hora",
+    "dia_semana",
+    "h_prev_alta",
+    "h_taxa10",
+    "h_taxa50",
+    "h_desde_ult_alta",
+    "c1_carga_alta"
+   ],
+   "platt_coef": 0.570412632175863,
+   "platt_intercepto": -1.110984615501466,
+   "cortes_prob_bruta": {
+    "0.05": 0.8894493631042167,
+    "0.1": 0.7894804440215814,
+    "0.2": 0.5819700019331651
+   },
+   "n_treino": 1702
+  }
+ }
+}

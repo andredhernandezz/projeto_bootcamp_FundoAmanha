@@ -1,0 +1,55 @@
+{
+ "tempo": [
+  "hora",
+  "dia_semana"
+ ],
+ "desfecho_c1": [
+  "c1_carga_alta"
+ ],
+ "feats_c1": [
+  "c1_peso_total_t",
+  "c1_densidade",
+  "c1_regra_ok",
+  "c1_prop_leve"
+ ],
+ "historico": [
+  "h_prev_alta",
+  "h_taxa10",
+  "h_taxa50",
+  "h_desde_ult_alta"
+ ],
+ "posicao": [
+  "pesofrac_fundo",
+  "pesofrac_meio",
+  "pesofrac_topo",
+  "dens_fundo",
+  "dens_meio",
+  "dens_topo",
+  "peso_fundo",
+  "dens_camada1",
+  "peso_topo",
+  "dens_ultima",
+  "peso_max_camada",
+  "peso_med_camada",
+  "frac_max_camada"
+ ],
+ "materiais": [
+  "mat_118441",
+  "mat_194032",
+  "mat_CAFO",
+  "mat_CAVA",
+  "mat_ESPR",
+  "mat_ESPS",
+  "mat_FOFO",
+  "mat_GUSS",
+  "mat_MISB",
+  "mat_MISM",
+  "mat_OXIC",
+  "mat_PACB",
+  "mat_PAEP",
+  "mat_RECA",
+  "mat_RETL",
+  "mat_SHRE",
+  "mat_SUGU"
+ ]
+}

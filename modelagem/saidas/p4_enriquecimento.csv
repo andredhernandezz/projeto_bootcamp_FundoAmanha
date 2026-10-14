@@ -1,0 +1,14 @@
+cestao,etapa,grupo,PR_AUC,delta,IC_lo,IC_hi
+1,isolado,historico,0.3278,0.0483,0.013,0.08
+1,isolado,posicao,0.2842,0.0047,-0.0395,0.0543
+1,isolado,materiais,0.306,0.0265,-0.015,0.0654
+1,forward,historico,0.3278,0.0483,0.013,0.08
+1,forward,posicao,0.3383,0.0105,-0.0293,0.0555
+2,isolado,desfecho_c1,0.38,0.0639,0.038,0.0937
+2,isolado,feats_c1,0.3326,0.0165,-0.0126,0.0501
+2,isolado,historico,0.438,0.1219,0.0808,0.17
+2,isolado,posicao,0.3172,0.0011,-0.0317,0.0368
+2,isolado,materiais,0.3304,0.0143,-0.014,0.0409
+2,forward,historico,0.438,0.1219,0.0808,0.17
+2,forward,desfecho_c1,0.4534,0.0153,0.0021,0.03
+2,forward,feats_c1,0.4653,0.012,-0.0153,0.0372
