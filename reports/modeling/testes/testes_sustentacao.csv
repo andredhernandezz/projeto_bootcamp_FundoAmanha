@@ -1,0 +1,17 @@
+test,H0,n,estatistica,p,efeito
+McNemar pareado c1-c2,Probabilidade c1 = probabilidade c2 na mesma corrida,1702,disc=279 c2 / 190 c1,4.6052540795319095e-05,c1=0.125;c2=0.177
+Fisher dependencia c1-c2,Independencia dos resultados no mesmo ciclo,1702,OR=0.50,0.002049344051184861,c2 se c1=1:0.104;se c1=0:0.187
+Mann-Whitney prop_pesado c1,Mesma distribuicao com/sem evento no treino,1214,U=51847,4.7461509298803e-16,"auc positivo=0.303, media evento=0.28 x sem=0.35"
+Mann-Whitney volume_estimado_m3 c1,Mesma distribuicao com/sem evento no treino,1214,U=100708,0.0003016588664230155,"auc positivo=0.588, media evento=70.42 x sem=67.98"
+Mann-Whitney peso_total_t c1,Mesma distribuicao com/sem evento no treino,1214,U=60576,1.7223133891278857e-09,"auc positivo=0.354, media evento=56.02 x sem=58.91"
+Mann-Whitney hhi_materiais c1,Mesma distribuicao com/sem evento no treino,1214,U=78517,0.08650416475165588,"auc positivo=0.458, media evento=0.19 x sem=0.19"
+Qui quadrado semana c1,Independencia fim semana e evento,1214,chi2=12.71,0.0003629858947192129,"taxa semana=0.158, fim semana=0.081"
+KS drift treino vs teste prop_pesado c1,Distribuicao covariavel estavel,1394,D=0.513,1.657195792408118e-38,media treino=0.34; teste=0.26
+KS drift treino vs teste volume_estimado_m3 c1,Distribuicao covariavel estavel,1394,D=0.391,4.722941582291359e-22,media treino=68.31; teste=75.39
+Mann-Whitney prop_pesado c2,Mesma distribuicao com/sem evento no treino,1171,U=41802,1.957624582992653e-40,"auc positivo=0.207, media evento=0.18 x sem=0.33"
+Mann-Whitney volume_estimado_m3 c2,Mesma distribuicao com/sem evento no treino,1171,U=90461,0.018655318910583446,"auc positivo=0.448, media evento=43.27 x sem=45.21"
+Mann-Whitney peso_total_t c2,Mesma distribuicao com/sem evento no treino,1171,U=62854,1.0286307794708052e-17,"auc positivo=0.311, media evento=31.69 x sem=40.37"
+Mann-Whitney hhi_materiais c2,Mesma distribuicao com/sem evento no treino,1171,U=61658,9.564637459499897e-19,"auc positivo=0.306, media evento=0.24 x sem=0.28"
+Qui quadrado semana c2,Independencia fim semana e evento,1171,chi2=2.14,0.14341228586592922,"taxa semana=0.191, fim semana=0.154"
+KS drift treino vs teste prop_pesado c2,Distribuicao covariavel estavel,1343,D=0.538,9.552758302728428e-41,media treino=0.30; teste=0.12
+KS drift treino vs teste volume_estimado_m3 c2,Distribuicao covariavel estavel,1343,D=0.204,5.784909024777829e-06,media treino=44.87; teste=41.35

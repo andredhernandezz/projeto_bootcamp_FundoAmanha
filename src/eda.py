@@ -8,6 +8,37 @@ from scipy.stats import binomtest, chi2_contingency, spearmanr, mannwhitneyu, po
 import itertools
 from matplotlib.patches import Patch
 import os
+import sys
+from pathlib import Path
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
+
+ROOT = Path(__file__).resolve().parents[1]
+DATASET_RAW = ROOT / 'dataset' / 'raw'
+DATASET_INTERIM = ROOT / 'dataset' / 'interim'
+DATASET_PROCESSED = ROOT / 'dataset' / 'processed'
+FIGURES = ROOT / 'reports' / 'figures'
+for directory in (DATASET_INTERIM, DATASET_PROCESSED, FIGURES):
+    directory.mkdir(parents=True, exist_ok=True)
+
+RAW_FILES = {'infos_materiais.csv', 'infos_camadas.csv', 'VariavelResposta.csv',
+             'dicionario_tipo_material.csv'}
+INTERIM_FILES = {'infos_materiais_limpo.csv', 'infos_camadas_convertido.csv',
+                 'materiais_classificados.csv', 'treino.csv', 'teste.csv'}
+
+
+def dataset_path(filename):
+    if filename in RAW_FILES:
+        return DATASET_RAW / filename
+    if filename in INTERIM_FILES:
+        return DATASET_INTERIM / filename
+    return DATASET_PROCESSED / filename
+
+
+def figure_path(filename):
+    return FIGURES / filename
 
 
 # ============================================================
@@ -25,9 +56,9 @@ OFFSET_HORAS = 0          # ajuste de fuso para turnos e dia da semana. Verifica
 # materiais é lido como texto: o arquivo original usa vírgula decimal ("0,40") e as linhas de
 # insumo (CAL/COQUE) têm texto na coluna de densidade. Funciona com vírgula ou ponto.
 
-materiais = pd.read_csv('infos_materiais.csv', comment='#', dtype=str)
-camadas = pd.read_csv('infos_camadas.csv')
-resposta = pd.read_csv('VariavelResposta.csv')
+materiais = pd.read_csv(dataset_path('infos_materiais.csv'), comment='#', dtype=str)
+camadas = pd.read_csv(dataset_path('infos_camadas.csv'))
+resposta = pd.read_csv(dataset_path('VariavelResposta.csv'))
 
 ####    PARTE 2 EDA ####
 
@@ -94,13 +125,13 @@ print(f"Join camadas x resposta validado: {len(corridas_resposta)} corridas nos 
 # ============================================================
 # SALVAR (arquivo NOVO; os originais ficam intactos)
 # ============================================================
-materiais.to_csv('infos_materiais_limpo.csv', index=False)
+materiais.to_csv(dataset_path('infos_materiais_limpo.csv'), index=False)
 
 # ============================================================
 # 3.0 CARREGAMENTO (robusto: pode rodar quantas vezes quiser)
 # ============================================================
 # dtype=str em 'Metálico' porque há códigos numéricos (7071955, 118441...)
-raw = pd.read_csv('infos_materiais_limpo.csv', dtype={'Metálico': str})
+raw = pd.read_csv(dataset_path('infos_materiais_limpo.csv'), dtype={'Metálico': str})
  
 #col_en, col_dens, col_rend = 'Energia Elétrica', 'Densidade t/m3', 'Rendimento Metálico %'
  
@@ -196,7 +227,7 @@ ax.set_xlabel('Densidade (t/m³) - escala log')
 ax.set_ylabel('Energia elétrica (kWh/t)')
 ax.set_title('Propriedades dos materiais metálicos')
 plt.tight_layout()
-plt.savefig('fig_3_2_scatter_materiais.png', dpi=150)
+plt.savefig(figure_path('fig_3_2_scatter_materiais.png'), dpi=150)
 #plt.show() # PLT SHOW ESTA COMENTADO APENAS PARA NAO APARECER -----------------------------------------------------------------------------------
  
 # ============================================================
@@ -253,11 +284,11 @@ ax.set_xlabel('Densidade (t/m³)')
 ax.set_ylabel('')
 ax.set_title('Densidade por material e classe')
 plt.tight_layout()
-plt.savefig('fig_3_3_densidade_por_classe.png', dpi=150)
+plt.savefig(figure_path('fig_3_3_densidade_por_classe.png'), dpi=150)
 # plt.show() # PLT SHOW ESTA COMENTADO APENAS PARA NAO APARECER -----------------------------------------------------------------------------------
  
 # Arquivo novo (não sobrescreve os originais) para as próximas etapas
-metais.to_csv('materiais_classificados.csv', index=False)
+metais.to_csv(dataset_path('materiais_classificados.csv'), index=False)
 print("\nSalvo: materiais_classificados.csv")
 
  
@@ -315,9 +346,9 @@ def estilo(ax, grade='y'):
 # ============================================================
 # 4.0 CARREGAMENTO E PREPARO (em memória; nada é regravado)
 # ============================================================
-camadas = pd.read_csv('infos_camadas.csv', dtype={'cd_codigo_material': str})
-materiais = pd.read_csv('materiais_classificados.csv', dtype={'material': str})
-resposta = pd.read_csv('VariavelResposta.csv')
+camadas = pd.read_csv(dataset_path('infos_camadas.csv'), dtype={'cd_codigo_material': str})
+materiais = pd.read_csv(dataset_path('materiais_classificados.csv'), dtype={'material': str})
+resposta = pd.read_csv(dataset_path('VariavelResposta.csv'))
 
 n0 = len(camadas)
 camadas = camadas.drop_duplicates()
@@ -331,7 +362,7 @@ camadas['peso_t'] = camadas['qt_peso_carregamento'] / 1000      # kg -> tonelada
 # classe de cada material (listas do guia, etapa 3)
 mapa_classe = materiais.set_index('material')['classe'].to_dict()
 # classe oficial por material (dicionario_tipo_material.csv): completa quem o guia não lista (RECG, RECC)
-tipo_dic = pd.read_csv('dicionario_tipo_material.csv', dtype=str)
+tipo_dic = pd.read_csv(dataset_path('dicionario_tipo_material.csv'), dtype=str)
 mapa_tipo = dict(zip(tipo_dic['cd_codigo_material'], tipo_dic['tp_material'].str.strip().str.lower()))
 conflitos = {m: (mapa_classe[m], mapa_tipo[m]) for m in mapa_tipo
              if mapa_classe.get(m, 'sem_classe') != 'sem_classe' and mapa_classe[m] != mapa_tipo[m]}
@@ -413,7 +444,7 @@ ax.set_title('Camadas por cestão, por carregamento')
 ax.legend(title='Carregamento')
 estilo(ax)
 plt.tight_layout()
-plt.savefig('fig_4_1_camadas_por_cestao.png', dpi=150)
+plt.savefig(figure_path('fig_4_1_camadas_por_cestao.png'), dpi=150)
 #plt.show()
 
 # ============================================================
@@ -467,7 +498,7 @@ axes[1].set_ylim(0, axes[1].get_ylim()[1] * 1.2)      # folga no topo para a leg
 axes[1].legend(loc='upper center', ncol=2)
 estilo(axes[1])
 plt.tight_layout()
-plt.savefig('fig_4_2_peso_por_carregamento.png', dpi=150)
+plt.savefig(figure_path('fig_4_2_peso_por_carregamento.png'), dpi=150)
 #plt.show()
 
 # ============================================================
@@ -509,7 +540,7 @@ classes_presentes = [c for c in CORES_CLASSE if c in set(por_material['classe'])
 axes[1].legend(handles=[Patch(color=CORES_CLASSE[c], label=c) for c in classes_presentes],
                title='Classe', loc='lower right')
 plt.tight_layout()
-plt.savefig('fig_4_3_composicao_material.png', dpi=150)
+plt.savefig(figure_path('fig_4_3_composicao_material.png'), dpi=150)
 #plt.show()
 
 # carregamento 1 x carregamento 2 (participação percentual no peso)
@@ -536,7 +567,7 @@ ax.set_title('Composição por material: carregamento 1 x 2 (materiais com 1% ou
 ax.legend()
 estilo(ax, grade='x')
 plt.tight_layout()
-plt.savefig('fig_4_3b_carreg1_vs_2.png', dpi=150)
+plt.savefig(figure_path('fig_4_3b_carreg1_vs_2.png'), dpi=150)
 #plt.show()
 
 # materiais que (quase) nunca aparecem juntos no mesmo cestão
@@ -609,7 +640,7 @@ axes[1].set_title('Distribuição por zona do cestão')
 axes[1].legend(title='Zona', ncol=3, loc='upper center', bbox_to_anchor=(0.5, -0.15))
 estilo(axes[1], grade='x')
 plt.tight_layout()
-plt.savefig('fig_4_4_posicao_camadas.png', dpi=150)
+plt.savefig(figure_path('fig_4_4_posicao_camadas.png'), dpi=150)
 #plt.show()
 
 # --- regra leve-pesado-leve por cestão ---------------------------------
@@ -669,8 +700,8 @@ print(cestoes.groupby(['nu_carregamento', 'carga_alta'])
 # ============================================================
 # SALVAR (arquivos novos; os de entrada não são tocados)
 # ============================================================
-cestoes.to_csv('cestoes_resumo.csv', index=False)
-por_material.to_csv('composicao_por_material.csv')
+cestoes.to_csv(dataset_path('cestoes_resumo.csv'), index=False)
+por_material.to_csv(dataset_path('composicao_por_material.csv'))
 print("\nSalvos: cestoes_resumo.csv, composicao_por_material.csv")
 
 
@@ -700,8 +731,8 @@ def estilo(ax, grade='y'):
 # ============================================================
 # 5.0 CARREGAMENTO E CONSISTÊNCIA
 # ============================================================
-resp = pd.read_csv('VariavelResposta.csv')
-camadas = pd.read_csv('infos_camadas.csv', usecols=['cd_corrida', 'nu_carregamento', 'dt_hora_consumo'])
+resp = pd.read_csv(dataset_path('VariavelResposta.csv'))
+camadas = pd.read_csv(dataset_path('infos_camadas.csv'), usecols=['cd_corrida', 'nu_carregamento', 'dt_hora_consumo'])
 camadas['dt_hora_consumo'] = pd.to_datetime(camadas['dt_hora_consumo'])
 
 f1 = resp['is_carga_alta_carregamento_1']
@@ -743,7 +774,7 @@ ax.set_title('Corridas com e sem carga alta')
 ax.set_ylim(0, cont.max() * 1.12)
 estilo(ax)
 plt.tight_layout()
-plt.savefig('fig_5_1_distribuicao_evento.png', dpi=150)
+plt.savefig(figure_path('fig_5_1_distribuicao_evento.png'), dpi=150)
 #plt.show()
 
 # ============================================================
@@ -804,7 +835,7 @@ axes[1].set_ylim(0, combo.max() * 1.15)
 axes[1].set_title('Em qual carregamento ocorreu a carga alta')
 estilo(axes[1])
 plt.tight_layout()
-plt.savefig('fig_5_2_carga_alta_por_carregamento.png', dpi=150)
+plt.savefig(figure_path('fig_5_2_carga_alta_por_carregamento.png'), dpi=150)
 #plt.show()
 
 # ============================================================
@@ -870,7 +901,7 @@ axes[1].set_ylabel('Duração da parada (s)')
 axes[1].set_title('Duração por carregamento')
 estilo(axes[1])
 plt.tight_layout()
-plt.savefig('fig_5_3_duracao_paradas.png', dpi=150)
+plt.savefig(figure_path('fig_5_3_duracao_paradas.png'), dpi=150)
 #plt.show()
 
 
@@ -878,9 +909,9 @@ plt.savefig('fig_5_3_duracao_paradas.png', dpi=150)
 # 6.0 IMPORTS NOVOS, CARREGAMENTO E PREPARO (em memória; nada é regravado)
 # ============================================================
 
-camadas = pd.read_csv('infos_camadas.csv', dtype={'cd_codigo_material': str}).drop_duplicates()
-materiais = pd.read_csv('materiais_classificados.csv', dtype={'material': str})
-resposta = pd.read_csv('VariavelResposta.csv')
+camadas = pd.read_csv(dataset_path('infos_camadas.csv'), dtype={'cd_codigo_material': str}).drop_duplicates()
+materiais = pd.read_csv(dataset_path('materiais_classificados.csv'), dtype={'material': str})
+resposta = pd.read_csv(dataset_path('VariavelResposta.csv'))
 
 camadas['dt_hora_consumo'] = pd.to_datetime(camadas['dt_hora_consumo'])
 camadas['nu_carregamento'] = camadas['nu_carregamento'].astype(int)
@@ -1062,7 +1093,7 @@ for i, c in enumerate(CARREGAMENTOS):
         ax.set_title(f if i == 0 else '')
         estilo(ax)
 plt.tight_layout()
-plt.savefig('fig_6_2_boxplots_features.png', dpi=150)
+plt.savefig(figure_path('fig_6_2_boxplots_features.png'), dpi=150)
 #plt.show()
 
 # ============================================================
@@ -1129,7 +1160,7 @@ for ax, c in zip(axes, CARREGAMENTOS):
     ax.legend()
     estilo(ax)
 plt.tight_layout()
-plt.savefig('fig_6_3_volume_por_classe.png', dpi=150)
+plt.savefig(figure_path('fig_6_3_volume_por_classe.png'), dpi=150)
 #plt.show()
 
 # taxa de carga alta por faixa de volume (decis): existe um limiar?
@@ -1149,7 +1180,7 @@ ax.set_title('Taxa de carga alta por faixa de volume (decis)')
 ax.legend()
 estilo(ax)
 plt.tight_layout()
-plt.savefig('fig_6_3b_taxa_por_faixa_volume.png', dpi=150)
+plt.savefig(figure_path('fig_6_3b_taxa_por_faixa_volume.png'), dpi=150)
 #plt.show()
 
 # ============================================================
@@ -1168,8 +1199,8 @@ if OFFSET_HORAS:
 print(f"Cestões que herdaram o horário da corrida: {int((cestoes['fonte_horario'] == 'corrida').sum())}")
 
 # checagem cruzada com o treino.csv: dt_corrida deve coincidir com o primeiro consumo da corrida
-if os.path.exists('treino.csv'):
-    _tr = pd.read_csv('treino.csv', usecols=['cd_corrida', 'dt_corrida'])
+if dataset_path('treino.csv').exists():
+    _tr = pd.read_csv(dataset_path('treino.csv'), usecols=['cd_corrida', 'dt_corrida'])
     _tr['dt_corrida'] = pd.to_datetime(_tr['dt_corrida'], utc=True).dt.tz_localize(None)
     _chk = _tr.merge(inicio_corrida.reset_index(), on='cd_corrida')
     _dif = (_chk['dt_corrida'] - _chk['inicio_corrida']).abs().dt.total_seconds() / 3600
@@ -1286,7 +1317,7 @@ ax.set_title(f'Taxa de carga alta por mês (faixa = IC 95%; meses com menos de {
 ax.legend()
 estilo(ax)
 plt.tight_layout()
-plt.savefig('fig_7_2_padroes_temporais.png', dpi=150)
+plt.savefig(figure_path('fig_7_2_padroes_temporais.png'), dpi=150)
 #plt.show()
 
 # ============================================================
@@ -1313,7 +1344,7 @@ for c in CARREGAMENTOS:
                 vmin=-1, vmax=1, square=True, cbar_kws={'label': 'Correlação de Spearman'})
     plt.title(f'Mapa de correlações - carregamento {c}')
     plt.tight_layout()
-    plt.savefig(f'fig_8_1_correlacoes_carreg{c}.png', dpi=150)
+    plt.savefig(figure_path(f'fig_8_1_correlacoes_carreg{c}.png'), dpi=150)
     #plt.show()
 
 # ============================================================
@@ -1338,7 +1369,7 @@ for c in CARREGAMENTOS:
         estilo(ax)
     fig.suptitle(f'Distribuição por classe - carregamento {c}', y=1.0)
     plt.tight_layout()
-    plt.savefig(f'fig_8_2_distribuicoes_carreg{c}.png', dpi=150)
+    plt.savefig(figure_path(f'fig_8_2_distribuicoes_carreg{c}.png'), dpi=150)
     #plt.show()
 
 # ============================================================
@@ -1385,7 +1416,7 @@ for i, c in enumerate(CARREGAMENTOS):
         ax.set_title(f)
         estilo(ax)
 plt.tight_layout()
-plt.savefig('fig_8_3_violinos_top_features.png', dpi=150)
+plt.savefig(figure_path('fig_8_3_violinos_top_features.png'), dpi=150)
 #plt.show()
 
 # ============================================================
@@ -1413,14 +1444,14 @@ def papel_coluna(col):
 _papeis = [{'arquivo': arq, 'coluna': c, 'papel': papel_coluna(c)[0], 'observacao': papel_coluna(c)[1]}
            for arq, df in (('dataset_modelagem.csv', cestoes), ('dataset_modelagem_corrida.csv', corrida))
            for c in df.columns]
-pd.DataFrame(_papeis).to_csv('dicionario_colunas_modelagem.csv', index=False)
+pd.DataFrame(_papeis).to_csv(dataset_path('dicionario_colunas_modelagem.csv'), index=False)
 print("\nPapel das colunas (dataset_modelagem.csv):")
 print(pd.Series([papel_coluna(c)[0] for c in cestoes.columns]).value_counts().to_string())
-cestoes.to_csv('dataset_modelagem.csv', index=False)
-corrida.to_csv('dataset_modelagem_corrida.csv', index=False)
+cestoes.to_csv(dataset_path('dataset_modelagem.csv'), index=False)
+corrida.to_csv(dataset_path('dataset_modelagem_corrida.csv'), index=False)
 pd.concat([comparacao[c].assign(carregamento=c) for c in CARREGAMENTOS]).to_csv(
-    'tabela_comparacao_features.csv', index=False)
-pb.to_csv('tabela_pontobisserial.csv', index=False)
+    dataset_path('tabela_comparacao_features.csv'), index=False)
+pb.to_csv(dataset_path('tabela_pontobisserial.csv'), index=False)
 print(f"\nSalvos: dataset_modelagem.csv ({cestoes.shape[0]} x {cestoes.shape[1]}), "
       f"dataset_modelagem_corrida.csv ({corrida.shape[0]} x {corrida.shape[1]}), "
       "tabela_comparacao_features.csv, tabela_pontobisserial.csv")

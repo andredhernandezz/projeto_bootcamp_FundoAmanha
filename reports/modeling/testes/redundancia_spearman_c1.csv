@@ -1,0 +1,11 @@
+variavel_redundante,mantida,rho_abs
+peso_leve_t,prop_leve,0.945
+peso_pesado_t,prop_pesado,0.954
+prop_misto,peso_misto_t,0.937
+vol_leve_m3,prop_leve,0.92
+prop_vol_leve,prop_leve,0.937
+n_baias,n_materiais,1.0
+violacao_regra,topo_pesado,1.0
+vol_x_prop_leve,prop_leve,0.959
+peso_x_hhi,hhi_materiais,0.907
+pesado_x_densidade,prop_pesado,0.952

@@ -1,0 +1,23 @@
+{
+  "p_fisher": 0.08027946250033434,
+  "or_fisher": 1.5640243902439024,
+  "p_permutacao_dia_estratificada": 0.30046635576282477,
+  "efeito_pp": 10.076252723311546,
+  "ci_cluster_pp": [
+    -11.16,
+    38.92
+  ],
+  "n_dias_feriado": 12,
+  "n_corridas_feriado": 68,
+  "n_corridas_outros": 1728,
+  "n_feriados_holdout": 0,
+  "ajuste": {
+    "or_ajustado": 1.796252605198952,
+    "ic95_or": [
+      0.628539340262283,
+      5.133367499857094
+    ],
+    "p_ajustado": 0.27428412517334466,
+    "metodo": "GLM binomial; efeitos fixos de mes; fim semana; erros cluster por dia"
+  }
+}

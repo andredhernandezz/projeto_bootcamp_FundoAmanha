@@ -1,9 +1,12 @@
 import pandas as pd
-import os
-print(os.getcwd())
+from pathlib import Path
 
-df = pd.read_csv("VariavelResposta.csv") # carrega um dataframe a partir do csv VariavelResposta
-camadas = pd.read_csv("infos_camadas.csv", parse_dates=["dt_hora_consumo"])
+ROOT = Path(__file__).resolve().parents[1]
+RAW = ROOT / "dataset" / "raw"
+INTERIM = ROOT / "dataset" / "interim"
+
+df = pd.read_csv(RAW / "VariavelResposta.csv")
+camadas = pd.read_csv(RAW / "infos_camadas.csv", parse_dates=["dt_hora_consumo"])
 
 # para cada corrida, pega a data mais antiga registrada
 datas_corrida = (
@@ -29,14 +32,15 @@ corte = int(n * 0.90)
 treino = df.iloc[:corte]
 teste = df.iloc[corte:]
 
-print("Treino:", treino.shape, treino["dt_corrida"].min(), "→", treino["dt_corrida"].max())
-print("Teste:", teste.shape, teste["dt_corrida"].min(), "→", teste["dt_corrida"].max())
+print("Treino:", treino.shape, treino["dt_corrida"].min(), "a", treino["dt_corrida"].max())
+print("Teste:", teste.shape, teste["dt_corrida"].min(), "a", teste["dt_corrida"].max())
 
-treino.to_csv("treino.csv", index=False)
-teste.to_csv("teste.csv", index=False)
+INTERIM.mkdir(parents=True, exist_ok=True)
+treino.to_csv(INTERIM / "treino.csv", index=False)
+teste.to_csv(INTERIM / "teste.csv", index=False)
 
-df2 = pd.read_csv('infos_camadas.csv')
+df2 = pd.read_csv(RAW / "infos_camadas.csv")
 df2['dt_hora_consumo'] = pd.to_datetime(df2['dt_hora_consumo'])
-df2.to_csv('infos_camadas_convertido.csv', index=False)
+df2.to_csv(INTERIM / "infos_camadas_convertido.csv", index=False)
 
 #parte Gabriel
