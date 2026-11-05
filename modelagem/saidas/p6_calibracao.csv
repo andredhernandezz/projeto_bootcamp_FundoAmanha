@@ -1,4 +1,4 @@
 metodo,brier,logloss
-sem calibrar,0.1722,0.5191
-Platt,0.1253,0.4067
-isotônica,0.126,0.426
+sem calibrar,0.1749,0.5211
+Platt,0.1296,0.4186
+isotônica,0.1291,0.429

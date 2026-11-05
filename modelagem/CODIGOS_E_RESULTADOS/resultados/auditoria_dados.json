@@ -1,0 +1,18 @@
+{
+  "n_corridas": 1799,
+  "n_cestoes": 3501,
+  "n_c1": 1799,
+  "n_c2": 1702,
+  "c2_ausentes": 97,
+  "ausentes_c2_com_alvo_positivo": 7,
+  "eventos_corrida": 541,
+  "tempo_parado_total_min": 2207.6,
+  "eventos_c1": 258,
+  "eventos_c2_registrados": 301,
+  "n_train_c1": 1214,
+  "n_val_c1": 405,
+  "n_test_c1": 180,
+  "n_train_c2": 1171,
+  "n_val_c2": 359,
+  "n_test_c2": 172
+}

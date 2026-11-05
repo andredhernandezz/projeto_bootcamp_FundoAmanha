@@ -18,6 +18,11 @@ esc = json.load(open(os.path.join(C.SAIDAS, 'features_escolhidas.json')))
 mod = json.load(open(os.path.join(C.SAIDAS, 'modelo_escolhido.json')))
 partes = []
 for c in (1, 2):
+    if mod[str(c)] not in p5_modelos.CANDIDATOS:
+        sys.exit(
+            f"Seleção de modelo desatualizada para o cestão {c}: {mod[str(c)]}. "
+            'Rode p5_modelos.py novamente antes da avaliação.'
+        )
     tr, te = d[d.dev & (d.nu_carregamento == c)], d[~d.dev & (d.nu_carregamento == c)].copy()
     A.checa_features(esc[str(c)])
     m = p5_modelos.CANDIDATOS[mod[str(c)]]().fit(tr[esc[str(c)]], tr[C.ALVO])

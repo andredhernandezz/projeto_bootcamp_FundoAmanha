@@ -1,0 +1,9 @@
+carregamento,modelo,conjunto,n_features,f2_validacao,pr_auc_validacao,recall_validacao
+1,Random Forest,completo,56,0.5405,0.3517,0.6377
+1,Random Forest,sem_feriados,54,0.527,0.3469,0.6232
+1,Random Forest,sem_ordem,46,0.5301,0.3371,0.6377
+1,Random Forest,sem_composicao,33,0.4839,0.3125,0.5652
+2,Random Forest,completo,59,0.6286,0.5172,0.7333
+2,Random Forest,sem_feriados,57,0.6232,0.5268,0.7167
+2,Random Forest,sem_ordem,49,0.625,0.5138,0.7
+2,Random Forest,sem_composicao,38,0.6319,0.527,0.7667

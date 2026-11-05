@@ -1,0 +1,11 @@
+variavel_redundante,mantida,rho_abs
+peso_pesado_t,prop_pesado,0.976
+vol_leve_m3,peso_leve_t,0.946
+n_baias,n_materiais,1.0
+participacao_SUGU,participacao_RECA,1.0
+violacao_regra,topo_pesado,1.0
+vol_x_prop_leve,peso_leve_t,0.923
+pesado_x_densidade,prop_pesado,0.978
+delta_peso_12,peso_total_t,0.951
+razao_peso_21,peso_total_t,0.98
+delta_prop_pesado_12,prop_pesado,0.908

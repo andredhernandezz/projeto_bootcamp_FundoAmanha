@@ -50,3 +50,18 @@ python -m streamlit run visual/app.py
 ```
 
 Os modelos e arquivos de apoio permanecem em `visual/assets/`. Consulte [visual/README.md](visual/README.md) para detalhes sobre o app, os dados e a interpretação dos resultados.
+
+## Executar o deploy Random Forest
+
+A cadeia de deploy em `modelagem/` usa os Random Forests validados em
+`visual/assets/` e as features do pacote `modelagem/CODIGOS_E_RESULTADOS/`. Para treinar
+artefatos locais e gerar previsões com os dados do projeto:
+
+```bash
+python -m pip install -r requirements-modeling.txt
+python modelagem/treinar_final.py
+python modelagem/prever.py --saida previsoes.csv
+```
+
+As previsões expõem `risco_rf` como escore bruto e usam os limiares fixos
+escolhidos na validação. Os artefatos CatBoost anteriores foram removidos.

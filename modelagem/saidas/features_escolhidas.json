@@ -18,11 +18,7 @@
   "pesado_fora_meio_pct",
   "regra_ok",
   "hora",
-  "dia_semana",
-  "h_prev_alta",
-  "h_taxa10",
-  "h_taxa50",
-  "h_desde_ult_alta"
+  "dia_semana"
  ],
  "2": [
   "peso_total_t",

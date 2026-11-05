@@ -1,0 +1,56 @@
+EVCOMX — PREDICAO DE CARGA ALTA — PACOTE DE MODELAGEM, OUTUBRO DE 2026
+=====================================================================
+
+ENTREGAS
+- ../../reports/docs/Relatorio_tecnico_EVCOMX.pdf/.docx: analise, modelos, variaveis, testes, riscos e criterios.
+- ../../reports/docs/Roteiro_para_apresentacao.pdf/.docx: fala por slide e perguntas/respostas da banca.
+- ../../reports/docs/Apresentacao_EVCOMX_editavel.pptx + PDF: oito slides com graficos e resultados.
+- resultados/tabelas/comparacao_modelos.csv: oito candidatos por carregamento e resultados finais.
+- resultados/tabelas/ablacoes_validacao.csv: comparacao de familias de features.
+- resultados/tabelas/importancia_permutacao_validacao_c1/c2.csv: importancia preditiva.
+- resultados/tabelas/features_consolidadas_auditaveis.csv: base agregada COM ALVOS.
+- resultados/testes: Mann-Whitney BH/Holm; Spearman; feriados; McNemar; KS; IC Wilson.
+- resultados/predicoes: scores e alertas do teste, para conferencia.
+- resultados/selecao_e_parametros.json: listas integrais das features e thresholds.
+- scripts/: reproduzir resultados; requer o ZIP de dados original enviado ao chat.
+
+COMO REPRODUZIR
+1) Extraia o ZIP ORIGINAL com os arquivos .csv para uma pasta chamada DADOS.
+2) Instale em um ambiente Python: numpy, pandas, scipy, statsmodels, scikit-learn, xgboost, matplotlib.
+   Não precisa instalar pacote externo holidays: há scripts/holidays.py com calendário
+   fixo nacional e municipal da janela 2025-2026; não use isso fora desse intervalo.
+3) Abra um terminal na pasta scripts e execute:
+      python 01_features.py /caminho/DADOS /caminho/BASE
+      python analise_reproduzivel.py /caminho/DADOS /caminho/BASE/features_cestao.csv /caminho/SAIDA
+      python testes_extras.py /caminho/SAIDA
+4) Apos reproduzir, verifique versões e resultados nos CSVs. O conjunto de teste não
+   deve ser utilizado para novas escolhas de hiperparametros ou features.
+
+O comando `analise_reproduzivel.py` aceita `--features-only` ao final dos
+argumentos para gerar a matriz completa de features de deploy sem retreinar os
+candidatos nem recalcular as métricas.
+
+DESENHO
+- Granularidade: um cestao por linha (1 ou 2); treino e teste divididos por corrida,
+  em ordem cronologica, respeitando treino.csv e teste.csv originais.
+- Cestao 2 tem 97 faltas de registro, das quais 7 com target positivo na tabela alvo.
+- Validação F2 com máximo de 35% de alarmes. Random Forest foi o campeão.
+- Labels, parada_s, post-evento e GUSL/carga do terceiro cestão ficam EXCLUIDOS.
+- Para feriados, datas com suffix UTC foram convertidas para horario -03:00,
+  mas essa convencao precisa ser validada com a siderurgica.
+- O estudo de feriados é exploratorio, utiliza 12 feriados observados e NAO teve
+  feriados no holdout. Não confundir p significativo sem ajuste do fuso com resultado final.
+- Importancias/associacoes nao demonstram causalidade nem reducao real de paradas.
+
+FONTES DE CALENDARIO UTILIZADAS
+- TRT-MG 2025, feriados locais: https://portal.trt3.jus.br/internet/institucional/calendario/feriados-locais-1/copy6_of_feriados-locais
+- TRT-MG 2026, feriados locais: https://portal.trt3.jus.br/internet/institucional/calendario/feriados-locais-1/feriados-locais-2026
+- Minas Gerais, feriados/pontos facultativos 2026: https://www.pesquisalegislativa.mg.gov.br/LegislacaoCompleta.aspx?cod=219156&marc=
+- Arquivos internos: Guia_EVCOMX_FEFS.pdf e Insights_EDA_carga_alta.pdf
+
+OBSERVACAO DE METODOLOGIA
+- As participacoes por material frequente são selecionadas SOMENTE com o treino.
+- O script original 01_features.py também gera alguns campos auxiliares na base;
+  apenas as colunas listadas em selecao_e_parametros.json são alimentadas aos modelos.
+- As duracoes associadas aos verdadeiros positivos nao equivalem a economia, que
+  depende de intervencao real, eficacia de prevencao e custo operacional de alarmes.

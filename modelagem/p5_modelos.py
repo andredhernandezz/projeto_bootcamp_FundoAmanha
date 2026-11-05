@@ -1,4 +1,4 @@
-"""P5 · Modelos. Pergunta: um modelo mais forte (XGBoost/CatBoost) e/ou ajustes valem a pena?
+"""P5 · Modelos candidatos avaliados na validação temporal.
 
 Decisões:
 - Features = as escolhidas no P4 (por cestão).
@@ -13,8 +13,8 @@ import config as C, avalia as A, modelos as M
 CANDIDATOS = {
     'LR C=0.05': M.lr(0.05), 'LR C=0.5': M.lr(0.5),
     'HGB d2': M.hgb(2, 0.05, 200), 'HGB d3': M.hgb(3, 0.05, 200), 'HGB d3 sem pesos': M.hgb(3, 0.05, 200, balanced=False),
+    'Random Forest': M.rf(),
     'XGB d2': M.xgb(2, 300), 'XGB d3': M.xgb(3, 300), 'XGB d3 spw=3': M.xgb(3, 300, spw=3.0),
-    'CatBoost d4': M.cat(4, 300), 'CatBoost d4 sem pesos': M.cat(4, 300, balanced=False),
 }
 
 
