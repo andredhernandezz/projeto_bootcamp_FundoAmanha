@@ -9,6 +9,46 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+## Docker (pipeline containerizado)
+
+Requisitos: Docker (e, opcionalmente, Docker Compose).
+
+```bash
+# 1) Construir a imagem (o build roda verificar_modelos.py e falha se as métricas não baterem)
+docker build -t evcomx-rf:latest .
+
+# 2) Dashboard / simulador Streamlit em http://localhost:8501
+docker run --rm -p 8501:8501 evcomx-rf:latest
+
+# 3) Verificar os modelos
+docker run --rm evcomx-rf:latest python pipeline.py verify
+
+# 4) Métricas e business case do teste -> data_out/avaliacao.json
+docker run --rm --user root -v "$PWD/data_out:/app/data_out" evcomx-rf:latest \
+  python pipeline.py evaluate --output data_out/avaliacao.json
+
+# 5) Previsão em lote (CSV de features em data_in/entrada.csv) -> data_out/previsoes_c1.csv
+docker run --rm --user root -v "$PWD/data_in:/app/data_in:ro" -v "$PWD/data_out:/app/data_out" \
+  evcomx-rf:latest python pipeline.py predict --cestao 1 --input data_in/entrada.csv --output data_out/previsoes_c1.csv
+```
+
+Com Docker Compose:
+
+```bash
+docker compose up --build app                          # dashboard
+docker compose --profile batch run --rm verify         # verificação
+docker compose --profile batch run --rm evaluate       # métricas + business case
+CESTAO=2 docker compose --profile batch run --rm predict   # previsão em lote
+```
+
+Também há atalhos em `Makefile` (`make build`, `make run`, `make verify`, `make evaluate`, `make predict CESTAO=1`).
+
+### Fluxo do pipeline
+
+`CSV de features (data_in/)` → `pipeline.py predict` (valida colunas, converte vírgula decimal, imputação pela mediana do treino, `predict_proba` do RF) → `risco_rf` + `alerta` pelo limiar do `config.json` (`data_out/`). O cestão 2 exige `carga_alta_c1_ctx` (resultado observado 0/1 do cestão 1). `data_in/entrada.csv` é um exemplo com 20 linhas reais do teste (cestão 1).
+
+**Escopo:** o container executa a **inferência e a avaliação** dos modelos já treinados. O treino e a engenharia de features a partir dos 3 CSVs brutos da empresa (`infos_camadas`, `infos_materiais`, `VariavelResposta`) ficam nos scripts da análise EVCOMX e não fazem parte deste pacote; as features já calculadas entram via CSV.
+
 ### Hospedagem no Streamlit Community Cloud
 
 Coloque os arquivos deste pacote em um repositório no GitHub e indique `app.py` como entry point. A pasta `assets/` deve permanecer junto do `app.py`.
@@ -66,7 +106,7 @@ Eficácia 100%, custo_fp 1 minuto e R$ 2.500/min são premissas ilustrativas. N�
 
 ## Arquivos
 
-`app.py`, `requirements.txt` e pasta `assets/` com 2 modelos joblib, `config.json`, previsões de validação e teste, exemplos e importância por permutação. Um arquivo `verificar_modelos.py` comprova métricas e equivalência.
+`app.py`, `pipeline.py`, `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `Makefile`, `data_in/`, `data_out/`, `requirements.txt` e pasta `assets/` com 2 modelos joblib, `config.json`, previsões de validação e teste, exemplos e importância por permutação. Um arquivo `verificar_modelos.py` comprova métricas e equivalência.
 
 ## Compatibilidade
 

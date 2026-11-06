@@ -1,0 +1,31 @@
+services:
+  app:                       # Dashboard / simulador Streamlit  ->  http://localhost:8501
+    build: .
+    image: evcomx-rf:latest
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+
+  verify:                    # docker compose --profile batch run --rm verify
+    image: evcomx-rf:latest
+    profiles: ["batch"]
+    command: ["python", "pipeline.py", "verify"]
+
+  predict:                   # previsão em lote: lê ./data_in/entrada.csv, grava em ./data_out
+    image: evcomx-rf:latest
+    profiles: ["batch"]
+    user: root               # permite gravar no volume montado
+    environment:
+      CESTAO: "1"
+    volumes:
+      - ./data_in:/app/data_in:ro
+      - ./data_out:/app/data_out
+    command: ["sh", "-c", "python pipeline.py predict --cestao $${CESTAO} --input data_in/entrada.csv --output data_out/previsoes_c$${CESTAO}.csv"]
+
+  evaluate:                  # métricas + business case do teste -> ./data_out/avaliacao.json
+    image: evcomx-rf:latest
+    profiles: ["batch"]
+    user: root
+    volumes:
+      - ./data_out:/app/data_out
+    command: ["python", "pipeline.py", "evaluate", "--output", "data_out/avaliacao.json"]

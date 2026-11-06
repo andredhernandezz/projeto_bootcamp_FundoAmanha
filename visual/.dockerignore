@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.venv/
+venv/
+.DS_Store
+data_out/*
+!data_out/.gitkeep
+Dockerfile
+docker-compose.yml
+.dockerignore
