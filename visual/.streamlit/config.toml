@@ -1,0 +1,12 @@
+# Identidade EVCOMX. O app usa fundo claro; force o tema claro também
+# nos componentes nativos para evitar rótulos brancos sobre fundo branco.
+[theme]
+base = "light"
+primaryColor = "#F54000"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8F7F6"
+textColor = "#222630"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"

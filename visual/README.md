@@ -75,3 +75,16 @@ A última reprodução foi realizada com scikit-learn 1.8.0; o pacote fixa sciki
 ### Verificação visual
 
 A lógica do app foi exercitada por testes automatizados que percorrem as seis funções de páginas com controles simulados. O Streamlit não estava disponível no ambiente de criação, portanto a interface em navegador real ainda deve ser validada após a instalação local.
+
+## Correção visual (novembro de 2026)
+
+Esta edição resolve o problema de textos e KPIs quase brancos sobre fundo branco
+no simulador, observado quando o Streamlit inicia com tema escuro. O arquivo
+`.streamlit/config.toml` força o tema claro com a paleta EVCOMX. O `app.py` também
+contém regras CSS explícitas para o contraste de rótulos, campos, cartões de métricas,
+barra lateral, expansão das variáveis avançadas e alertas. Nenhum modelo, dado,
+limiar ou cálculo foi alterado em relação à versão Random Forest original.
+
+**Importante:** copie também a pasta oculta `.streamlit/`, não apenas o `app.py`.
+No Streamlit Community Cloud, faça commit dessa pasta e reinicie o aplicativo.
+Se o tema antigo persistir no navegador, recarregue forçadamente (Ctrl + Shift + R).

@@ -32,19 +32,150 @@ ORANGE, GRAPHITE, PEACH, BG = '#F54000', '#222630', '#FDE8E2', '#FFFFFF'
 
 st.set_page_config(page_title='EVCOMX | Random Forest', page_icon='🔥', layout='wide', initial_sidebar_state='expanded')
 st.markdown("""<style>
-html, body, .stApp {font-family: Arial, sans-serif;}
-.stApp {background:#FFFFFF;color:#222630}
-[data-testid="stSidebar"] {background:#222630}
-[data-testid="stSidebar"] * {color:#FFFFFF !important}
-.block-container {padding-top:1.6rem;max-width:1480px}
-.banner {background:linear-gradient(115deg,#222630 0%,#222630 78%,#F54000 78%);
- padding:29px 30px;border-radius:14px;color:#FFFFFF;margin-bottom:22px}
-.banner h1 {color:#FFFFFF;font-size:2rem;letter-spacing:-.035em;font-weight:800;margin:0}
-.banner p {color:#FDE8E2;margin:7px 0 0;max-width:920px}
-.infobox {background:#FFF5F0;border-left:5px solid #F54000;border-radius:7px;
- padding:13px 17px;margin:15px 0;}
-[data-testid="stMetric"] {background:#FFFFFF;border:1px solid #EEE7E3;padding:14px;border-radius:11px}
-.stButton button[kind="primary"],.stDownloadButton button[kind="primary"]{background:#F54000;color:white;border-color:#F54000}
+/* EVCOMX: impedir cores herdadas do tema escuro do navegador/Streamlit. */
+:root { color-scheme: light; }
+html, body, [data-testid="stAppViewContainer"], .stApp {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #FFFFFF !important;
+    color: #222630 !important;
+}
+.block-container { padding-top: 1.6rem; max-width: 1480px; }
+
+/* Texto da área principal: títulos, descrições e, sobretudo, labels de inputs. */
+[data-testid="stAppViewContainer"] h1,
+[data-testid="stAppViewContainer"] h2,
+[data-testid="stAppViewContainer"] h3,
+[data-testid="stAppViewContainer"] h4,
+[data-testid="stAppViewContainer"] p,
+[data-testid="stAppViewContainer"] li,
+[data-testid="stAppViewContainer"] [data-testid="stWidgetLabel"],
+[data-testid="stAppViewContainer"] [data-testid="stWidgetLabel"] p,
+[data-testid="stAppViewContainer"] [data-testid="stWidgetLabel"] label,
+[data-testid="stAppViewContainer"] [data-testid="stWidgetLabel"] span,
+[data-testid="stAppViewContainer"] [data-testid="stMarkdownContainer"] > p {
+    color: #222630 !important;
+}
+[data-testid="stAppViewContainer"] [data-testid="stCaptionContainer"],
+[data-testid="stAppViewContainer"] [data-testid="stCaptionContainer"] p,
+[data-testid="stAppViewContainer"] small { color: #66717D !important; }
+
+/* Capa e explicações: contraste preservado mesmo com regra geral de texto. */
+.banner {
+    background: linear-gradient(115deg, #222630 0%, #222630 78%, #F54000 78%);
+    padding: 29px 30px; border-radius: 14px; margin-bottom: 22px;
+}
+.banner h1, [data-testid="stAppViewContainer"] .banner h1 {
+    color: #FFFFFF !important; font-size: 2rem; font-weight: 800;
+    letter-spacing: -.035em; margin: 0;
+}
+.banner p, [data-testid="stAppViewContainer"] .banner p {
+    color: #FDE8E2 !important; margin: 7px 0 0; max-width: 920px;
+}
+.infobox {
+    background: #FFF5F0; color: #482B24 !important; border-left: 5px solid #F54000;
+    border-radius: 8px; padding: 13px 17px; margin: 15px 0;
+}
+
+/* Cartões dos indicadores. Corrige os valores 37,1%, 35,3%, ALERTA invisíveis. */
+[data-testid="stMetric"] {
+    background: #FFFFFF !important; border: 1px solid #E6E2DF !important;
+    border-radius: 11px; padding: 15px 17px;
+    box-shadow: 0 3px 12px rgba(34,38,48,.045);
+}
+[data-testid="stMetric"] [data-testid="stMetricLabel"],
+[data-testid="stMetric"] [data-testid="stMetricLabel"] *,
+[data-testid="stMetric"] label {
+    color: #515B65 !important; font-size: .90rem !important;
+}
+[data-testid="stMetric"] [data-testid="stMetricValue"],
+[data-testid="stMetric"] [data-testid="stMetricValue"] * {
+    color: #222630 !important; font-weight: 780 !important;
+}
+[data-testid="stMetric"] [data-testid="stMetricDelta"] * {color: #0F7650 !important;}
+
+/* Inputs nativos: fundo claro + caracteres legíveis, inclusive +/- do number input. */
+[data-testid="stNumberInput"] [data-baseweb="input"],
+[data-testid="stNumberInput"] [data-baseweb="input"] > div,
+[data-testid="stNumberInput"] [data-baseweb="base-input"] {
+    background: #FAF9F8 !important;
+    color: #222630 !important;
+}
+[data-testid="stNumberInput"] input,
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stDateInput"] input,
+[data-testid="stSelectbox"] [data-baseweb="select"],
+[data-testid="stSelectbox"] [data-baseweb="select"] * {
+    background-color: #FAF9F8 !important;
+    color: #222630 !important;
+    -webkit-text-fill-color: #222630 !important;
+}
+[data-testid="stNumberInput"] input,
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea {
+    border-color: #DADDE1 !important;
+}
+[data-testid="stNumberInput"] button {
+    background: #EEECEB !important; color: #222630 !important;
+    border-color: #DADDE1 !important;
+}
+[data-testid="stNumberInput"] button svg,
+[data-testid="stSelectbox"] svg { color: #222630 !important; fill: currentColor; }
+[data-testid="stExpander"] {
+    background: #F8F7F6 !important; border: 1px solid #E0E1E4 !important;
+    border-radius: 10px;
+}
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary * {color: #222630 !important;}
+[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] {
+    background: #F54000 !important;
+}
+
+/* Botões consistentes; foco visível para navegação por teclado. */
+.stButton button[kind="primary"],
+.stDownloadButton button[kind="primary"] {
+    background: #F54000 !important; color: #FFFFFF !important;
+    border: 1px solid #F54000 !important; font-weight: 700;
+}
+.stButton button[kind="primary"] *,
+.stDownloadButton button[kind="primary"] * {color: #FFFFFF !important;}
+.stButton button:focus-visible,
+.stDownloadButton button:focus-visible,
+input:focus-visible {outline: 3px solid #F7AA8C !important;outline-offset: 2px;}
+
+/* Sidebar escura, mas preservando texto branco e radios selecionados. */
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] > div {background: #222630 !important; color: #FFFFFF !important;}
+[data-testid="stSidebar"] *,
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+    background: rgba(255,255,255,.10);
+}
+[data-testid="stSidebar"] [role="radiogroup"] label {border-radius: 7px;}
+
+/* Barra laranja própria, sem depender da cor herdada do tema escuro. */
+.risk-track {
+    height: 11px; background: #FDE8E2; border-radius: 99px;
+    overflow: hidden; margin: 18px 0 16px;
+}
+.risk-track > div {
+    height: 100%; background: #F54000; border-radius: 99px;
+    transition: width .25s ease;
+}
+.risk-alert {
+    background: #FFF0EB; border: 1px solid #F5B49D; color: #963813 !important;
+    border-left: 5px solid #F54000; border-radius: 9px;
+    font-weight: 750; padding: 14px 16px; margin-top: 12px;
+}
+.risk-ok {
+    background: #EAF7F0; border: 1px solid #A6DBBF; color: #175C3D !important;
+    border-left: 5px solid #20855A; border-radius: 9px;
+    font-weight: 750; padding: 14px 16px; margin-top: 12px;
+}
 </style>""",unsafe_allow_html=True)
 
 
@@ -240,9 +371,15 @@ def view_simulator(data,cfg,models):
     except Exception as exc:st.error(f'Falha na previsão: {exc}');return
     a,b,d=st.columns(3)
     a.metric('Risco estimado',pct(risk));b.metric('Limiar atual',pct(threshold));d.metric('Decisão','ALERTA' if risk>=threshold else 'SEM ALERTA')
-    st.progress(min(100,max(0,int(round(100*risk)))))
-    if risk>=threshold:st.error('ALERTA: carregamento acima do limiar de risco selecionado.')
-    else:st.success('Risco abaixo do limiar selecionado.')
+    st.markdown(
+        f'<div class="risk-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" '
+        f'aria-valuenow="{risk*100:.1f}" aria-label="Risco estimado">'
+        f'<div style="width:{max(0.0,min(100.0,risk*100)):.1f}%"></div></div>',
+        unsafe_allow_html=True)
+    if risk>=threshold:
+        st.markdown('<div class="risk-alert">⚠ ALERTA: carregamento acima do limiar de risco selecionado.</div>',unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="risk-ok">✓ Risco abaixo do limiar selecionado.</div>',unsafe_allow_html=True)
     st.caption('Não há calibrador de probabilidade validado para este Random Forest. O valor apresentado é a saída bruta do classificador; não deve ser interpretado como frequência empírica garantida.')
     original=subset(data,c).set_index('cd_corrida')
     if sample_id in original.index:
